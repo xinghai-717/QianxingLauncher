@@ -868,7 +868,8 @@ public static class ModModpack
         });
 
         // 重复任务检查
-        var loaderName = Lang.Text(isQianxing ? "千星整合包安装：{0}" : "Minecraft.Download.Modpack.Task.ModrinthInstall", instanceName);
+        string loaderName = isQianxing ? "千星整合包安装" : Lang.Text("Minecraft.Download.Modpack.Task.ModrinthInstall", instanceName);
+        
         if (loaderTaskbar.Any(l => (l.name ?? "") == (loaderName ?? "")))
         {
             HintService.Hint(Lang.Text("Minecraft.Download.Modpack.Installing"), HintType.Error);

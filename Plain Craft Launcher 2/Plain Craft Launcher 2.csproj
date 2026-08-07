@@ -24,12 +24,13 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <ApplicationManifest>app.manifest</ApplicationManifest>
         <ApplicationIcon>Images\icon.ico</ApplicationIcon>
-        <AssemblyTitle>Plain Craft Launcher Community Edition</AssemblyTitle>
-        <Description>Minecraft 启动器 (作者: 龙腾猫跃; 经社区二次开发版本)</Description>
-        <Product>Plain Craft Launcher Community Edition</Product>
-        <Copyright>Copyright © 龙腾猫跃 2016. All Rights Reserved.</Copyright>
-        <AssemblyVersion>2.15.0.0</AssemblyVersion>
-        <FileVersion>2.15.0.0</FileVersion>
+        <AssemblyTitle>千星启动器</AssemblyTitle>
+        <Description>Minecraft 启动器 (千星二次开发版)</Description>
+        <Product>千星启动器</Product>
+        <Copyright>千星服务器QQ群:1050841130</Copyright>
+        <AssemblyVersion>1.0.0</AssemblyVersion>
+        <FileVersion>1.0.0</FileVersion>
+		<ProductVersion>1.0.0</ProductVersion>
         <NoWarn>
             41999;42016;42017;42018;42019;42020;42021;42022;42032;42036;42314;
             VSTHRD002;VSTHRD003;VSTHRD110;VSTHRD200
@@ -105,6 +106,9 @@
         <EnableDefaultNoneItems>false</EnableDefaultNoneItems>
         <EnableDefaultApplicationDefinition>false</EnableDefaultApplicationDefinition>
         <EnableDefaultPageItems>false</EnableDefaultPageItems>
+        <Authors>星海,Bobo</Authors>
+        <Company>千星科技</Company>
+        <RepositoryUrl>https://github.com/xinghai-717/QianxingLauncher</RepositoryUrl>
     </PropertyGroup>
     <ItemGroup>
         <Compile Include="**\*.cs" Exclude="bin\**;obj\**;publish\**" />
@@ -129,5 +133,18 @@
       <Page Update="Pages\PageServer\PageServerStatus.xaml">
         <Generator>MSBuild:Compile</Generator>
       </Page>
+    </ItemGroup>
+    <ItemGroup>
+      <None Include="Properties\Settings.settings">
+        <Generator>SettingsSingleFileGenerator</Generator>
+        <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+      </None>
+    </ItemGroup>
+    <ItemGroup>
+      <Compile Update="Properties\Settings.Designer.cs">
+        <DesignTimeSharedInput>True</DesignTimeSharedInput>
+        <AutoGen>True</AutoGen>
+        <DependentUpon>Settings.settings</DependentUpon>
+      </Compile>
     </ItemGroup>
 </Project>

@@ -1,14 +1,5 @@
-using System.ComponentModel;
-using System.IO;
-using System.Net;
-using System.Runtime.InteropServices;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Interop;
-using System.Windows.Media;
-using System.Windows.Media.Effects;
 using PCL.Core.App;
+using PCL.Core.App.Essentials;
 using PCL.Core.App.IoC;
 using PCL.Core.App.Localization;
 using PCL.Core.Logging;
@@ -19,6 +10,17 @@ using PCL.Core.Utils;
 using PCL.Core.Utils.OS;
 using PCL.Core.Utils.Validate;
 using PCL.Network;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
+using System.Net;
+using System.Runtime.InteropServices;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Interop;
+using System.Windows.Media;
+using System.Windows.Media.Effects;
 
 namespace PCL;
 
@@ -47,7 +49,7 @@ public partial class FormMain
                 changelog = Lang.Text("Main.UpdateLog.Empty");
             if (ModMain.MyMsgBoxMarkdown(changelog,
                     Lang.Text("Main.UpdateLog.Title", ModBase.versionBranchName, ModBase.versionBaseName), Lang.Text("Common.Action.Confirm"), Lang.Text("Main.UpdateLog.FullChangelog")) ==
-                2) ModBase.OpenWebsite("https://github.com/PCL-Community/PCL2-CE/releases");
+                2) ModBase.OpenWebsite("https://github.com/xinghai-717/QianxingLauncher/releases");
         }, "UpdateLog Output");
     }
 
@@ -272,6 +274,37 @@ public partial class FormMain
                                 Lang.Text("Main.Telemetry.Message"),
                                 Lang.Text("Main.Telemetry.Title"), Lang.Text("Common.Action.Agree"), Lang.Text("Common.Action.Decline"));
                     Config.System.TelemetryConfig.SetValue(selection == 1, forceNewValue: true);
+                }
+
+                if (!string.IsNullOrEmpty(SingleInstanceService.ExistingProcessId))
+                {
+                    var existingPid = SingleInstanceService.ExistingProcessId;
+                    var choice = ModMain.MyMsgBox(
+                        $"检测到已有 PCL CE 正在运行 (PID: {existingPid})，您希望如何处理？",
+                        "已有实例",
+                        "中断启动",
+                        "尝试强行终止PCL CE(危险)",
+                        "尝试同时运行(危险)"
+                    );
+
+                    switch (choice)
+                    {
+                        case 1:
+                            // 激活旧实例
+                            ActivateExistingInstance(existingPid);
+                            // 然后退出当前实例
+                            EndProgram(false);
+                            break;
+                        case 2:
+                            // 终止旧实例
+                            KillExistingInstance(existingPid);
+                            break;
+                        case 3:
+                            // 同时运行：不做任何操作，让两个实例共存
+                            // 但需要释放锁，否则可能冲突
+                            // 或者直接继续运行
+                            break;
+                    }
                 }
                 // 启动加载器池
                 try
@@ -2269,6 +2302,160 @@ public partial class FormMain
         if (PanMainRight.Child is null || !(PanMainRight.Child is MyPageRight))
             return null;
         return ((MyPageRight)PanMainRight.Child).PanScroll;
+    }
+
+    #endregion
+
+    #region 新增的进程间通信代码
+
+    // Win32 API
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+    private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+    [DllImport("user32.dll")]
+    private static extern bool IsWindowVisible(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    private const int SW_RESTORE = 9;
+
+    private IntPtr FindTopLevelWindowForProcess(int pid)
+    {
+        IntPtr found = IntPtr.Zero;
+        try
+        {
+            EnumWindows((hWnd, lParam) =>
+            {
+                if (!IsWindowVisible(hWnd))
+                    return true; // continue
+                GetWindowThreadProcessId(hWnd, out uint windowPid);
+                if (windowPid == (uint)pid)
+                {
+                    found = hWnd;
+                    return false; // stop enumeration
+                }
+
+                return true; // continue
+            }, IntPtr.Zero);
+        }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, "查找进程窗口时出错", ModBase.LogLevel.Developer);
+        }
+
+        return found;
+    }
+
+    private void ActivateExistingInstance(string existingProcessId)
+    {
+        try
+        {
+            if (!int.TryParse(existingProcessId, out var pid))
+            {
+                ModBase.Log($"无法解析 PID: {existingProcessId}", ModBase.LogLevel.Developer);
+                return;
+            }
+
+            Process proc;
+            try
+            {
+                proc = Process.GetProcessById(pid);
+            }
+            catch (ArgumentException)
+            {
+                ModBase.Log($"未找到 PID 为 {pid} 的进程", ModBase.LogLevel.Developer);
+                return;
+            }
+
+            // 尝试使用 MainWindowHandle，如果无效则枚举窗口
+            var hWnd = proc.MainWindowHandle;
+            if (hWnd == IntPtr.Zero)
+                hWnd = FindTopLevelWindowForProcess(pid);
+
+            if (hWnd == IntPtr.Zero)
+            {
+                ModBase.Log($"找不到进程 {pid} 的顶层窗口，无法激活", ModBase.LogLevel.Developer);
+                return;
+            }
+
+            // 恢复并置顶
+            try
+            {
+                ShowWindow(hWnd, SW_RESTORE);
+                SetForegroundWindow(hWnd);
+                ModBase.Log($"已激活已存在的实例 (PID: {pid})");
+            }
+            catch (Exception ex)
+            {
+                ModBase.Log(ex, $"激活已有实例 (PID: {pid}) 失败", ModBase.LogLevel.Feedback);
+            }
+        }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, "ActivateExistingInstance 失败", ModBase.LogLevel.Feedback);
+        }
+    }
+
+    private void KillExistingInstance(string existingProcessId)
+    {
+        try
+        {
+            if (!int.TryParse(existingProcessId, out var pid))
+            {
+                ModBase.Log($"无法解析 PID: {existingProcessId}", ModBase.LogLevel.Developer);
+                return;
+            }
+
+            Process proc;
+            try
+            {
+                proc = Process.GetProcessById(pid);
+            }
+            catch (ArgumentException)
+            {
+                ModBase.Log($"未找到 PID 为 {pid} 的进程，可能已退出", ModBase.LogLevel.Developer);
+                return;
+            }
+
+            try
+            {
+                // 尝试优雅关闭主窗口
+                if (proc.CloseMainWindow())
+                {
+                    if (!proc.WaitForExit(2000))
+                    {
+                        // 超时则强制终止
+                        proc.Kill(true);
+                        proc.WaitForExit(2000);
+                    }
+                }
+                else
+                {
+                    // 无主窗口或无法关闭，直接 Kill
+                    proc.Kill(true);
+                    proc.WaitForExit(2000);
+                }
+
+                HintService.Hint($"已终止已有实例 (PID: {pid})",HintType.Success);
+            }
+            catch (Exception ex)
+            {
+                ModBase.Log(ex, $"终止已有实例 (PID: {pid}) 失败", ModBase.LogLevel.Feedback);
+            }
+        }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, "KillExistingInstance 失败", ModBase.LogLevel.Feedback);
+        }
     }
 
     #endregion

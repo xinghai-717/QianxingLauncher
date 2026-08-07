@@ -358,6 +358,7 @@ public static class ModProfile
         
             selectedAuthTypeNum = ModMain.MyMsgBoxSelect(authTypeList, Lang.Text("Launch.Account.Profile.Create.SelectAuthType.Title"), Lang.Text("Common.Action.Continue"), Lang.Text("Common.Action.Cancel"));
         });
+        PageLoginProfile.profileOpen = false;
         if (selectedAuthTypeNum is null)
             return;
         isCreatingProfile = true;

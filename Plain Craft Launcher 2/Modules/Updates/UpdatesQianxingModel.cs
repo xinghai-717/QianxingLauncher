@@ -12,7 +12,7 @@ namespace PCL;
 public class UpdatesQianxingModel : IUpdateSource // 千星启动器专属更新系统
 {
     private const string UpdateServerBaseUrl =
-        "https://serverupdate.wrh6.qzz.io/qianxing";
+        "https://serverupdate.wrh6.qzz.io/launcher";
 
     public string SourceName { get; set; } = "千星启动器更新源";
 

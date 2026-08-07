@@ -39,9 +39,6 @@ public partial class PageSetupAbout
 
         if (!Lang.IsChineseMainland)
         {
-            ItemMcmod.Visibility = Visibility.Collapsed;
-            BtnMcmod.Visibility = Visibility.Collapsed;
-            ImgMcmod.Visibility = Visibility.Collapsed;
             RowMcmod.Height = new GridLength(0);
         }
 
@@ -53,7 +50,7 @@ public partial class PageSetupAbout
         try
         {
             using (var response = await HttpRequest
-                       .Create("https://api.github.com/repos/PCL-Community/PCL2-CE/contributors").SendAsync())
+                       .Create("https://api.github.com/xinghai-717/QianxingLauncher").SendAsync())
             {
                 response.EnsureSuccessStatusCode();
                 var cos = await response.AsJsonAsync<List<GitHubContributor>>(JsonCompat.SerializerOptions);
@@ -71,6 +68,12 @@ public partial class PageSetupAbout
     private void ImgPCLCommunity_Click(object sender, MouseButtonEventArgs e)
     {
         ModAnimation.AniStart(new[] { ModAnimation.AaRotateTransform(sender, 360d) });
+    }
+
+    private void CopyLaodiQQ_Click(object sender, MouseButtonEventArgs e)
+    {
+        Clipboard.SetText("3291596227");
+        HintService.Hint("复制成功!", HintType.Success);
     }
 
     private void ImgPCLLogo_Click(object sender, MouseButtonEventArgs e)

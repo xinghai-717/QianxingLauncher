@@ -5,8 +5,13 @@ using PCL.Core.Minecraft.ResourceProject;
 using PCL.Network;
 using PCL.Network.Loaders;
 using System.IO;
+using System.IO.Compression;
+using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
+using System.Text.RegularExpressions;
 
 namespace PCL;
 
@@ -17,9 +22,16 @@ public partial class PageServerUpdate
     {
         InitializeComponent();
         if (ModInstanceList.McMcInstanceSelected is null)
+        {
             BtnDownload.Visibility = Visibility.Visible;
+            BtnUpdateMod.Visibility = Visibility.Collapsed;
+        }
         else
+        {
+            BtnDownload.Visibility = Visibility.Collapsed;
             BtnUpdateMod.Visibility = Visibility.Visible;
+        }
+            
         _ = UpdateUIAsync();
     }
 
@@ -40,10 +52,114 @@ public partial class PageServerUpdate
         Reload();
     }
 
+    public static string ComputeFileSHA1(string filePath)
+    {
+        using (var sha1 = SHA1.Create())
+        using (var stream = File.OpenRead(filePath))
+        {
+            byte[] hash = sha1.ComputeHash(stream);
+            return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+        }
+    }
+
+    public static bool VerifyFileSHA1(string filePath, string expectedSHA1)
+    {
+        if (!File.Exists(filePath)) return false;
+        string actualSHA1 = ComputeFileSHA1(filePath);
+        return string.Equals(actualSHA1, expectedSHA1, StringComparison.OrdinalIgnoreCase);
+    }
+
     private async void BtnDownload_Click(object sender, MouseButtonEventArgs e)
     {
         Dispatcher.Invoke(() => HintService.Hint("正在准备下载，请稍等片刻...", HintType.Info,false));
-        await AutoInstallLatestFabricAsync();
+
+        var response = await HttpRequest.Create("https://serverupdate.wrh6.qzz.io/mrpack").SendAsync(); // 假设 SendAsync 返回 Task<HttpResponse>
+
+        string jsonString = response.AsString();
+        var jsonNode = JsonNode.Parse(jsonString);
+        if (jsonNode == null)
+        {
+            ModBase.Log("JSON 解析失败", ModBase.LogLevel.Msgbox);
+            return;
+        }
+
+        string? url = jsonNode["data"]?["url"]?.GetValue<string>();
+        string? sha1 = jsonNode["data"]?["sha1"]?.GetValue<string>();
+
+        if (url == null)
+        {
+            ModBase.Log("获取整合包地址失败", ModBase.LogLevel.Feedback);
+            return;
+        }
+
+        if (sha1 == null)
+        {
+            ModBase.Log("未获取到SHA1", ModBase.LogLevel.Feedback);
+            return;
+        }
+
+        var uri = new Uri(url);
+        string fileName = "modpack.mrpack";
+
+        //string nameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
+
+        var folder = ModBase.exePath; // 确保路径以反斜杠结尾
+        if (!folder.EndsWith(@"\")) folder += @"\";
+
+        //string extractPath = folder+nameWithoutExt;
+
+        var loader = PageToolsTest.StartCustomDownload(url, fileName, folder, isQianxing : true);
+
+        if (loader == null) return;
+
+        // 等待完成
+        var tcs = new TaskCompletionSource<bool>();
+
+        loader.OnStateChanged = (s) =>
+        {
+            if (s.State == ModBase.LoadState.Finished)
+            {
+                if (!VerifyFileSHA1(folder + fileName, sha1))
+                {
+                    ModBase.Log($"哈希校验失败", ModBase.LogLevel.Feedback);
+                    return;
+                }
+
+                //HintService.Hint("下载完成！开始解压整合包", HintType.Success);
+                //ZipFile.ExtractToDirectory(folder + fileName, extractPath, overwriteFiles:true);
+                //File.Delete(folder + fileName);
+                ModBase.RunInNewThread(() =>
+                {
+                    try
+                    {
+                        var loader = ModModpack.ModpackInstall(
+                            file: folder+fileName,
+                            instanceName: "ThousandStars",      // 可选，不提供则会弹窗让用户输入
+                            logo: null,                     // 可选，实例图标路径
+                            resourceId: null,               // 可选，CurseForge/Modrinth 项目 ID
+                            isOnlineInstall: false,          // 是否在线安装（若 true 不自动跳转任务管理器）
+                            isQianxing : true
+                        );
+
+                        if (loader != null)
+                        {
+                            loader.OnStateChanged = (s) =>
+                            {
+                                if (s.State == ModBase.LoadState.Finished || s.State == ModBase.LoadState.Failed || s.State == ModBase.LoadState.Aborted)
+                                    //Directory.Delete(extractPath, true);
+                                    File.Delete(folder + fileName);
+                            };
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        ModBase.Log("安装整合包失败!", ModBase.LogLevel.Feedback);
+                    }
+                });
+            } 
+            else if (s.State == ModBase.LoadState.Failed)
+                ModBase.Log("下载失败!", ModBase.LogLevel.Feedback);
+        };
     }
 
     private async Task UpdateUIAsync()

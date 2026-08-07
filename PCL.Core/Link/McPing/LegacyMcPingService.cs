@@ -1,4 +1,4 @@
-using PCL.Core.Link.McPing.Model;
+﻿using PCL.Core.Link.McPing.Model;
 using PCL.Core.Logging;
 using System;
 using System.IO;
@@ -48,7 +48,7 @@ public class LegacyMcPingService : IMcPingService
     /// </summary>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    public async Task<McPingResult?> PingAsync(CancellationToken cancellationToken = default)
+    public async Task<McPingResult?> PingAsync(CancellationToken cancellationToken = default, bool isQianxing = false)
     {
         // TODO: 实现旧版协议的探测逻辑
         // 这里需要迁移原来McPing类中的PingOldAsync方法逻辑

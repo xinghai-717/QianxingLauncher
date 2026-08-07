@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
@@ -52,7 +52,7 @@ public static class ModModpack
     /// </summary>
     /// <exception cref="ModBase.CancelledException" />
     public static LoaderCombo<string> ModpackInstall(string file, string instanceName = null, string logo = null,
-        string resourceId = null, bool isOnlineInstall = false)
+        string resourceId = null, bool isOnlineInstall = false, bool isQianxing = false)
     {
         ModBase.Log("[ModPack] 整合包安装请求：" + (file ?? "null"));
         ZipArchive archive = null;
@@ -227,7 +227,7 @@ public static class ModModpack
                 {
                     ModBase.Log("[ModPack] 整合包种类：Modrinth");
                     return InstallPackModrinth(file, archive, archiveBaseFolder, instanceName, logo, resourceId,
-                        isOnlineInstall);
+                        isOnlineInstall, isQianxing);
                 }
                 case 9:
                 {
@@ -655,7 +655,7 @@ public static class ModModpack
 
     private static LoaderCombo<string> InstallPackModrinth(string fileAddress, ZipArchive archive,
         string archiveBaseFolder, string instanceName = null, string logo = null, string resourceId = null,
-        bool isOnlineInstall = false)
+        bool isOnlineInstall = false, bool isQianxing = false)
     {
         // 读取 Json 文件
         JsonObject json;
@@ -868,7 +868,7 @@ public static class ModModpack
         });
 
         // 重复任务检查
-        var loaderName = Lang.Text("Minecraft.Download.Modpack.Task.ModrinthInstall", instanceName);
+        var loaderName = Lang.Text(isQianxing ? "千星整合包安装：{0}" : "Minecraft.Download.Modpack.Task.ModrinthInstall", instanceName);
         if (loaderTaskbar.Any(l => (l.name ?? "") == (loaderName ?? "")))
         {
             HintService.Hint(Lang.Text("Minecraft.Download.Modpack.Installing"), HintType.Error);

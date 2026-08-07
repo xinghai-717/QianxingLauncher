@@ -154,14 +154,29 @@ public partial class PageLoginProfile
             sender.Buttons = new[] { btnCopyUuid, btnDelete };
     }
 
+    public static bool profileOpen = false;
+
     // 创建档案
-    private void BtnNew_Click(object sender, EventArgs e)
+    private void openProfile()
     {
+        if (!profileOpen) profileOpen = true;
+        else return;
         ModBase.RunInNewThread(() =>
         {
             ModProfile.CreateProfile();
             ModBase.RunInUi(() => RefreshProfileList());
         });
+    }
+
+
+    private void BtnNew_Click(object sender, EventArgs e)
+    {
+        openProfile();
+    }
+
+    private void PanButtons_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        openProfile();
     }
 
     // 编辑 UUID

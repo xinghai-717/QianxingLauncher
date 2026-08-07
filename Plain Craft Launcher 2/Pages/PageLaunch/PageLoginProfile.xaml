@@ -40,9 +40,9 @@
     </local:MyScrollViewer>
 
     <local:MyCard Grid.Row="5" HorizontalAlignment="Center" x:Name="PanButtons" Opacity="10"
-                  CornerRadius="5" Margin="0,0,4,0">
+                  CornerRadius="5" Margin="0,0,4,0" MouseLeftButtonDown="PanButtons_MouseLeftButtonDown">
         <StackPanel Orientation="Horizontal" Margin="10,3,0,3">
-            <local:MyIconButton Height="24" Margin="0,0.5,9,0" x:Name="BtnNew"
+            <local:MyIconButton Height="48" Margin="0,0.5,9,0" x:Name="BtnNew"
                                  Click="BtnNew_Click"
                                  ToolTip="{DynamicResource Launch.Account.Profile.Create}" ToolTipService.Placement="Center" ToolTipService.VerticalOffset="35"
                                 ToolTipService.HorizontalOffset="1" ToolTipService.InitialShowDelay="50"

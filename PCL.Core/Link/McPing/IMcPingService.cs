@@ -1,4 +1,4 @@
-using PCL.Core.Link.McPing.Model;
+﻿using PCL.Core.Link.McPing.Model;
 using System;
 using System.Net;
 using System.Threading;
@@ -16,7 +16,7 @@ public interface IMcPingService : IDisposable
     /// </summary>
     /// <param name="cancellationToken">取消令牌</param>
     /// <returns>服务器探测结果，如果探测失败则返回null</returns>
-    Task<McPingResult?> PingAsync(CancellationToken cancellationToken = default);
+    Task<McPingResult?> PingAsync(CancellationToken cancellationToken = default, bool isQianxing = false);
     
     /// <summary>
     /// 获取服务端点信息

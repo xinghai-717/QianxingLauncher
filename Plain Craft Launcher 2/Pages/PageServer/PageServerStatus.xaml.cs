@@ -24,7 +24,6 @@ public partial class PageServerStatus
     public async void Reload()
     {
         await GetServerInfo();
-        HintService.Hint(Lang.Text("Server.Status.GetStatusSuccess"), HintType.Success, false);
     }
 
     #region 页面切换
@@ -55,7 +54,7 @@ public partial class PageServerStatus
 
             using (var query = McPingServiceFactory.CreateService(addr.Host, addr.Ip, addr.Port))
             {
-                var ret = await query.PingAsync();
+                var ret = await query.PingAsync(isQianxing : true);
 
                 if (ret is null) throw new Exception(Lang.Text("Tools.ServerQuery.State.NoInfo"));
 
@@ -93,18 +92,21 @@ public partial class PageServerStatus
                 // 4. 切换显示状态
                 DataPanel.Visibility = Visibility.Visible;
                 WaitPanel.Visibility = Visibility.Collapsed;
+
+                HintService.Hint(Lang.Text("Server.Status.GetStatusSuccess"), HintType.Success, false);
             }
         }
         catch (Exception ex)
         {
-            ModBase.Log(ex, "服务器查询失败", ModBase.LogLevel.Feedback);
+            HintService.Hint("服务器已关闭", HintType.Info);
             // 可选：显示错误状态
             Dispatcher.Invoke(() =>
             {
+                ServerImage.Visibility = Visibility.Collapsed;
                 WaitPanel.Visibility = Visibility.Collapsed;
                 DataPanel.Visibility = Visibility.Visible;
-                TxtOnlineCount.Text = "查询失败";
-                TxtVersion.Text = "错误";
+                TxtOnlineCount.Text = "0";
+                TxtVersion.Text = "服务器已关闭";
             });
         }
     }

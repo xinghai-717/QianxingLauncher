@@ -62,7 +62,7 @@ public class McPingService : IMcPingService
     /// </summary>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    public async Task<McPingResult?> PingAsync(CancellationToken cancellationToken = default)
+    public async Task<McPingResult?> PingAsync(CancellationToken cancellationToken = default, bool isQianxing = false)
     {
         using var so = new Socket(SocketType.Stream, ProtocolType.Tcp);
         using var timeoutCts = new CancellationTokenSource(_timeout);
@@ -80,7 +80,8 @@ public class McPingService : IMcPingService
         }
         catch (Exception e)
         {
-            LogWrapper.Error(e, ModuleName, $"Failed to connect to the {_endpoint}");
+            if (!isQianxing)
+                LogWrapper.Error(e, ModuleName, $"Failed to connect to the {_endpoint}");
             return null;
         }
 

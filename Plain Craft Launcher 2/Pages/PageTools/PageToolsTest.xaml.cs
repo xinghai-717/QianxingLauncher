@@ -97,7 +97,7 @@ public partial class PageToolsTest
                 {
                     ModBase.Log(
                         loader.Error,
-                        $"{loader.name}Ê§°Ü",
+                        $"{loader.name}å¤±è´¥",
                         ModBase.LogLevel.Msgbox,
                         userSummary: Lang.Text("Tools.Test.Error.OperationFailed"));
                     Console.Beep();
@@ -115,60 +115,62 @@ public partial class PageToolsTest
         }
     }
 
-    public static void StartCustomDownload(string url, string fileName, string folder = null, string userAgent = "")
+    public static ModLoader.LoaderCombo<int> StartCustomDownload(string url, string fileName, string folder = null, string userAgent = "", bool isQianxing = false)
+{
+    try
     {
-        try
+        if (string.IsNullOrWhiteSpace(folder))
         {
-            if (string.IsNullOrWhiteSpace(folder))
-            {
-                folder = SystemDialogs.SelectSaveFile(Lang.Text("Tools.Test.CustomDownload.SelectLocation"), fileName);
-                if (!folder.Contains(@"\")) return;
-                if (folder.EndsWith(fileName)) folder = folder[..^fileName.Length];
-            }
-
-            folder = folder.Replace("/", @"\").TrimEnd(new[] { '\\' }) + @"\";
-            try
-            {
-                Directory.CreateDirectory(folder);
-                ModBase.CheckPermissionWithException(folder);
-            }
-            catch (Exception ex)
-            {
-                ModBase.Log(
-                    ex,
-                    $"·ÃÎÊÎÄ¼ş¼ĞÊ§°Ü£¨{folder}£©",
-                    ModBase.LogLevel.Hint,
-                    userSummary: Lang.Text("Tools.Test.Error.OperationFailed"));
-                return;
-            }
-
-            ModBase.Log("[Download] ×Ô¶¨ÒåÏÂÔØÎÄ¼şÃû£º" + fileName);
-            ModBase.Log("[Download] ×Ô¶¨ÒåÏÂÔØÎÄ¼şÄ¿±ê£º" + folder);
-            var uuid = ModBase.GetUuid();
-            ModLoader.LoaderBase loaderdownload;
-            if (new HttpValidator().Validate(url).IsValid)
-                loaderdownload = new LoaderDownload(Lang.Text("Tools.Test.CustomDownload.LoaderName", fileName),
-                    new List<DownloadFile> { new(new[] { url }, folder + fileName, null, true, userAgent) });
-            else // UNC Â·¾¶
-                loaderdownload = new LoaderDownloadUnc(Lang.Text("Tools.Test.CustomDownload.LoaderName", fileName),
-                    new Tuple<string, string>(url, folder + fileName));
-            var loaderCombo = new ModLoader.LoaderCombo<int>(Lang.Text("Tools.Test.CustomDownload.LoaderTitle", uuid), new[] { loaderdownload })
-                { OnStateChanged = a => DownloadState((ModLoader.LoaderCombo<int>)a) };
-            loaderCombo.Start();
-            ModLoader.LoaderTaskbarAdd(loaderCombo);
-            ModMain.frmMain.BtnExtraDownload.ShowRefresh();
-            ModMain.frmMain.BtnExtraDownload.Ribble();
+            folder = SystemDialogs.SelectSaveFile(Lang.Text("Tools.Test.CustomDownload.SelectLocation"), fileName);
+            if (!folder.Contains(@"\")) return null;
+            if (folder.EndsWith(fileName)) folder = folder[..^fileName.Length];
         }
 
+        folder = folder.Replace("/", @"\").TrimEnd(new[] { '\\' }) + @"\";
+        try
+        {
+            Directory.CreateDirectory(folder);
+            ModBase.CheckPermissionWithException(folder);
+        }
         catch (Exception ex)
         {
             ModBase.Log(
                 ex,
-                "¿ªÊ¼×Ô¶¨ÒåÏÂÔØÊ§°Ü",
-                ModBase.LogLevel.Feedback,
+                $"è®¿é—®æ–‡ä»¶å¤¹å¤±è´¥ï¼ˆ{folder}ï¼‰",
+                ModBase.LogLevel.Hint,
                 userSummary: Lang.Text("Tools.Test.Error.OperationFailed"));
+            return null;
         }
+
+        ModBase.Log("[Download] è‡ªå®šä¹‰ä¸‹è½½æ–‡ä»¶åï¼š" + fileName);
+        ModBase.Log("[Download] è‡ªå®šä¹‰ä¸‹è½½æ–‡ä»¶ç›®æ ‡ï¼š" + folder);
+        var uuid = ModBase.GetUuid();
+        ModLoader.LoaderBase loaderdownload;
+        if (new HttpValidator().Validate(url).IsValid)
+            loaderdownload = new LoaderDownload(Lang.Text(isQianxing ? "Tools.Test.CustomDownload.LoaderNameQianxing" : "Tools.Test.CustomDownload.LoaderName", fileName),
+                new List<DownloadFile> { new(new[] { url }, folder + fileName, null, true, userAgent) });
+        else // UNC è·¯å¾„
+            loaderdownload = new LoaderDownloadUnc(Lang.Text(isQianxing ? "Tools.Test.CustomDownload.LoaderNameQianxing" : "Tools.Test.CustomDownload.LoaderName", fileName),
+                new Tuple<string, string>(url, folder + fileName));
+        var loaderCombo = new ModLoader.LoaderCombo<int>(Lang.Text(isQianxing ? "Tools.Test.CustomDownload.LoaderNameQianxing" : "Tools.Test.CustomDownload.LoaderTitle", uuid), new[] { loaderdownload })
+            { OnStateChanged = a => DownloadState((ModLoader.LoaderCombo<int>)a) };
+        loaderCombo.Start();
+        ModLoader.LoaderTaskbarAdd(loaderCombo);
+        ModMain.frmMain.BtnExtraDownload.ShowRefresh();
+        ModMain.frmMain.BtnExtraDownload.Ribble();
+
+        return loaderCombo;
     }
+    catch (Exception ex)
+    {
+        ModBase.Log(
+            ex,
+            "å¼€å§‹è‡ªå®šä¹‰ä¸‹è½½å¤±è´¥",
+            ModBase.LogLevel.Feedback,
+            userSummary: Lang.Text("Tools.Test.Error.OperationFailed"));
+        return null;
+    }
+}
 
     public static void Jrrp()
     {
@@ -190,20 +192,20 @@ public partial class PageToolsTest
             if (ModMain.frmToolsTest is not null && ModMain.frmToolsTest.BtnClear is not null)
                 ModMain.frmToolsTest.BtnClear.IsEnabled = false;
         });
-        // Ö»ÓĞµ±Ã»ÓĞÔËĞĞÖĞµÄMinecraftÓÎÏ·ÇÒÆô¶¯Æ÷²»ÔÚ¼ÓÔØ×´Ì¬Ê±²ÅÄÜÇåÀí
+        // åªæœ‰å½“æ²¡æœ‰è¿è¡Œä¸­çš„Minecraftæ¸¸æˆä¸”å¯åŠ¨å™¨ä¸åœ¨åŠ è½½çŠ¶æ€æ—¶æ‰èƒ½æ¸…ç†
 
-        // ÇåÀíµÄÎÄ¼şÊıÁ¿
-        // ËùÓĞ Minecraft ÎÄ¼ş¼Ğ
+        // æ¸…ç†çš„æ–‡ä»¶æ•°é‡
+        // æ‰€æœ‰ Minecraft æ–‡ä»¶å¤¹
 
 
-        // Ñ°ÕÒËùÓĞ Minecraft ÎÄ¼ş¼Ğ
+        // å¯»æ‰¾æ‰€æœ‰ Minecraft æ–‡ä»¶å¤¹
 
-        // É¾³ı Minecraft µÄ»º´æ
-        // É¾³ıÈÕÖ¾ºÍ±ÀÀ£±¨¸æ²¢¼ÆÊı
+        // åˆ é™¤ Minecraft çš„ç¼“å­˜
+        // åˆ é™¤æ—¥å¿—å’Œå´©æºƒæŠ¥å‘Šå¹¶è®¡æ•°
 
-        // É¾³ı Natives ÎÄ¼ş
+        // åˆ é™¤ Natives æ–‡ä»¶
 
-        // É¾³ı PCL µÄ»º´æ
+        // åˆ é™¤ PCL çš„ç¼“å­˜
 
         ModBase.RunInNewThread(() =>
         {
@@ -284,7 +286,7 @@ public partial class PageToolsTest
             {
                 ModBase.Log(
                     ex,
-                    "ÇåÀíÀ¬»øÊ§°Ü",
+                    "æ¸…ç†åƒåœ¾å¤±è´¥",
                     ModBase.LogLevel.Hint,
                     userSummary: Lang.Text("Tools.Test.Error.OperationFailed"));
             }
@@ -343,7 +345,7 @@ public partial class PageToolsTest
         }
         catch (Exception ex)
         {
-            ModBase.Log(ex, "´ò¿ªÏÂÔØÎÄ¼ş¼ĞÊ§°Ü");
+            ModBase.Log(ex, "æ‰“å¼€ä¸‹è½½æ–‡ä»¶å¤¹å¤±è´¥");
         }
     }
 
@@ -379,7 +381,7 @@ public partial class PageToolsTest
         RubbishClear();
     }
 
-    // ÏÂÔØÕı°æÍæ¼ÒÆ¤·ô
+    // ä¸‹è½½æ­£ç‰ˆç©å®¶çš®è‚¤
     private void BtnSkinSave_Click(object sender, MouseButtonEventArgs e)
     {
         var id = TextSkinID.Text;
@@ -410,17 +412,17 @@ public partial class PageToolsTest
                 if (ex.ToString().Contains("429"))
                 {
                     HintService.Hint(Lang.Text("Tools.Test.Skin.TooFrequent"), HintType.Error);
-                    ModBase.Log($"»ñÈ¡Õı°æÆ¤·ôÊ§°Ü£¨{id}£©£º»ñÈ¡Æ¤·ôÌ«¹ıÆµ·±£¬Çë 5 ·ÖÖÓºóÔÙÊÔ£¡");
+                    ModBase.Log($"è·å–æ­£ç‰ˆçš®è‚¤å¤±è´¥ï¼ˆ{id}ï¼‰ï¼šè·å–çš®è‚¤å¤ªè¿‡é¢‘ç¹ï¼Œè¯· 5 åˆ†é’Ÿåå†è¯•ï¼");
                 }
                 else
                 {
-                    ModBase.Log(ex, $"»ñÈ¡Õı°æÆ¤·ôÊ§°Ü£¨{id}£©");
+                    ModBase.Log(ex, $"è·å–æ­£ç‰ˆçš®è‚¤å¤±è´¥ï¼ˆ{id}ï¼‰");
                 }
             }
         });
     }
 
-    // ½ñÈÕÈËÆ·
+    // ä»Šæ—¥äººå“
     private void BtnLuck_Click(object sender, MouseButtonEventArgs e)
     {
         Jrrp();
@@ -465,7 +467,7 @@ public partial class PageToolsTest
 
     private void BtnCreateShortcut_Click(object sender, MouseButtonEventArgs e)
     {
-        var shortcutName = "Ç§ĞÇÆô¶¯Æ÷.lnk";
+        var shortcutName = "åƒæ˜Ÿå¯åŠ¨å™¨.lnk";
         var desktopName = Lang.Text("Tools.Test.Shortcut.Desktop");
         var desktop = Paths.GetSpecialPath(Environment.SpecialFolder.Desktop, shortcutName);
         var choice = ModMain.MyMsgBox(desktop, Lang.Text("Tools.Test.Shortcut.SelectLocation"), Lang.Text("Common.Action.Cancel"), desktopName);
@@ -475,7 +477,7 @@ public partial class PageToolsTest
         HintService.Hint(Lang.Text("Tools.Test.Shortcut.Created", desktopName), HintType.Success);
     }
 
-    // Æô¶¯¼ÆÊıÏÔÊ¾
+    // å¯åŠ¨è®¡æ•°æ˜¾ç¤º
     private void BtnLaunchCount_Click(object sender, MouseButtonEventArgs e)
     {
         ModMain.MyMsgBox(Lang.Text("Tools.Test.LaunchCount.Message", States.System.LaunchCount), Lang.Text("Tools.Test.LaunchCount.Title"));
@@ -484,7 +486,7 @@ public partial class PageToolsTest
     private async void BtnAchievementPreview_Click(object sender, MouseButtonEventArgs e)
     {
         var url = GetAchievementUrl();
-        ModBase.Log("[Net] »ñÈ¡ÍøÂç½á¹û" + url);
+        ModBase.Log("[Net] è·å–ç½‘ç»œç»“æœ" + url);
         await LoadImageAsync(url);
     }
 
@@ -513,17 +515,17 @@ public partial class PageToolsTest
             else if (response.StatusCode == HttpStatusCode.NotFound)
                 Dispatcher.Invoke(() =>
                 {
-                    ModBase.Log("»ñÈ¡³É¾ÍÍ¼Æ¬Ê§°Ü£¨404£©");
+                    ModBase.Log("è·å–æˆå°±å›¾ç‰‡å¤±è´¥ï¼ˆ404ï¼‰");
                     HintService.Hint(Lang.Text("Tools.Test.Achievement.FetchFailed"), HintType.Error);
                 });
 
             else
-                Dispatcher.Invoke(() => ModBase.Log("»ñÈ¡³É¾ÍÍ¼Æ¬Ê§°Ü£¨" + (int)response.StatusCode + "£©"));
+                Dispatcher.Invoke(() => ModBase.Log("è·å–æˆå°±å›¾ç‰‡å¤±è´¥ï¼ˆ" + (int)response.StatusCode + "ï¼‰"));
         }
 
         catch (Exception ex)
         {
-            Dispatcher.Invoke(() => ModBase.Log(ex, "»ñÈ¡³É¾ÍÍ¼Æ¬Ê§°Ü"));
+            Dispatcher.Invoke(() => ModBase.Log(ex, "è·å–æˆå°±å›¾ç‰‡å¤±è´¥"));
         }
     }
 
@@ -539,23 +541,23 @@ public partial class PageToolsTest
         var client = NetworkService.GetClient();
         try
         {
-            // Òì²½·¢ËÍ GET ÇëÇó
+            // å¼‚æ­¥å‘é€ GET è¯·æ±‚
             var response = await client.GetAsync(imageUrl);
 
-            // Èç¹ûÏìÓ¦×´Ì¬ÂëÊÇ³É¹¦µÄ£¬Ôò¼ÌĞø
+            // å¦‚æœå“åº”çŠ¶æ€ç æ˜¯æˆåŠŸçš„ï¼Œåˆ™ç»§ç»­
             if (response.IsSuccessStatusCode)
             {
-                // Òì²½¶ÁÈ¡ÏìÓ¦ÄÚÈİÎª×Ö½ÚÁ÷
+                // å¼‚æ­¥è¯»å–å“åº”å†…å®¹ä¸ºå­—èŠ‚æµ
                 var imageBytes = await response.Content.ReadAsByteArrayAsync();
 
-                // ½«×Ö½ÚĞ´Èë±¾µØÎÄ¼ş
+                // å°†å­—èŠ‚å†™å…¥æœ¬åœ°æ–‡ä»¶
                 File.WriteAllBytes(savePath, imageBytes);
 
                 var path =
                     SystemDialogs.SelectSaveFile(Lang.Text("Tools.Test.Achievement.Save"), AchievementTitleTextBox.Text + ".png", Lang.Text("Tools.Test.Achievement.FileFilter"));
                 if (string.IsNullOrEmpty(path))
                 {
-                    ModBase.Log("ÓÃ»§È¡ÏûÁË±£´æ²Ù×÷");
+                    ModBase.Log("ç”¨æˆ·å–æ¶ˆäº†ä¿å­˜æ“ä½œ");
                     File.Delete(savePath);
                     return;
                 }
@@ -564,24 +566,24 @@ public partial class PageToolsTest
                 File.Delete(savePath);
                 HintService.Hint(Lang.Text("Tools.Test.Achievement.Saved"), HintType.Success);
             }
-            // ÏÂÔØ³É¹¦£¬·µ»Ø True
+            // ä¸‹è½½æˆåŠŸï¼Œè¿”å› True
             else if (response.StatusCode == HttpStatusCode.NotFound)
             {
-                // ²¶»ñ 404 ´íÎó
-                ModBase.Log("»ñÈ¡³É¾ÍÍ¼Æ¬Ê§°Ü£¨404£©");
+                // æ•è· 404 é”™è¯¯
+                ModBase.Log("è·å–æˆå°±å›¾ç‰‡å¤±è´¥ï¼ˆ404ï¼‰");
                 HintService.Hint(Lang.Text("Tools.Test.Achievement.FetchFailed"), HintType.Error);
             }
             else
             {
-                // ´¦ÀíÆäËû·Ç³É¹¦×´Ì¬Âë
-                ModBase.Log("»ñÈ¡³É¾ÍÍ¼Æ¬Ê§°Ü£¨" + (int)response.StatusCode + "£©");
+                // å¤„ç†å…¶ä»–éæˆåŠŸçŠ¶æ€ç 
+                ModBase.Log("è·å–æˆå°±å›¾ç‰‡å¤±è´¥ï¼ˆ" + (int)response.StatusCode + "ï¼‰");
             }
         }
 
         catch (Exception ex)
         {
-            // ²¶»ñËùÓĞÆäËûÒì³££¨ÈçÍøÂçÁ¬½ÓÎÊÌâ£©
-            ModBase.Log(ex, "»ñÈ¡³É¾ÍÍ¼Æ¬Ê§°Ü");
+            // æ•è·æ‰€æœ‰å…¶ä»–å¼‚å¸¸ï¼ˆå¦‚ç½‘ç»œè¿æ¥é—®é¢˜ï¼‰
+            ModBase.Log(ex, "è·å–æˆå°±å›¾ç‰‡å¤±è´¥");
         }
     }
 
@@ -645,7 +647,7 @@ public partial class PageToolsTest
 
         catch (Exception ex)
         {
-            ModBase.Log(ex, "Éú³ÉÍ·ÏñÊ§°Ü");
+            ModBase.Log(ex, "ç”Ÿæˆå¤´åƒå¤±è´¥");
             HintService.Hint(Lang.Text("Tools.Test.Avatar.GenerateFailed", ex.Message), HintType.Error);
             SkinPreviewBorder.Visibility = Visibility.Collapsed;
         }

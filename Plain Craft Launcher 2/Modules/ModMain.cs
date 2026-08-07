@@ -824,26 +824,6 @@ public static class ModMain
 
     #region 系统
 
-    /// <summary>
-    ///     把某个 PCL 窗口拖到最前面。
-    /// </summary>
-    public static void ShowWindowToTop(nint handle)
-    {
-        try
-        {
-            PostMessage(handle, 400 * 16 + 2, 0L, 0L);
-            SetForegroundWindow(handle); // 不在这里放不行，神秘 WinAPI，建议别动
-        }
-        catch (Exception ex)
-        {
-            ModBase.Log(
-                ex,
-                "设置窗口置顶失败",
-                ModBase.LogLevel.Hint,
-                userSummary: Lang.Text("Main.Error.OperationFailed"));
-        }
-    }
-
     [DllImport("user32", EntryPoint = "FindWindowA")]
     public static extern nint FindWindow(string className, string windowName);
 

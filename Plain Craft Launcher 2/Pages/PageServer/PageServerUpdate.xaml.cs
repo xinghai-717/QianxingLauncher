@@ -21,7 +21,7 @@ public partial class PageServerUpdate
     public PageServerUpdate()
     {
         InitializeComponent();
-        if (ModInstanceList.McMcInstanceSelected is null)
+        if (ModInstanceList.McMcInstanceSelected is not null)
         {
             BtnDownload.Visibility = Visibility.Visible;
             BtnUpdateMod.Visibility = Visibility.Collapsed;
@@ -201,6 +201,7 @@ public partial class PageServerUpdate
         }
     }
 
+
     private async void BtnUpdateMod_Click(object sender, MouseButtonEventArgs e)
     {
         if (mods == null || mods.Length == 0)
@@ -209,15 +210,19 @@ public partial class PageServerUpdate
             return;
         }
 
-        foreach (string projectId in mods) {
-            var ids = new List<string> { projectId };
-            bool isCurseForge = ModComp.CompRequest.IsFromCurseForge(projectId);
-            var file = ModFileHelper.GetLatestModFile(projectId, isCurseForge, "1.21.1");
-            var projects = await ModComp.CompRequest.GetCompProjectsByIdsAsync(ids);
-            var project = projects.FirstOrDefault();
-            var cachedFolder = new Dictionary<ModComp.CompType, string>();
-            DownloadModResourceAuto(file, project, cachedFolder);
-        }
+        await Task.Run(async () =>
+        {
+            foreach (string projectId in mods)
+            {
+                var ids = new List<string> { projectId };
+                bool isCurseForge = ModComp.CompRequest.IsFromCurseForge(projectId);
+                var file = ModFileHelper.GetLatestModFile(projectId, isCurseForge, "1.21.1");
+                var projects = await ModComp.CompRequest.GetCompProjectsByIdsAsync(ids);
+                var project = projects.FirstOrDefault();
+                var cachedFolder = new Dictionary<ModComp.CompType, string>();
+                DownloadModResourceAuto(file, project, cachedFolder);
+            }
+        });
     }
 
     #region 页面切换

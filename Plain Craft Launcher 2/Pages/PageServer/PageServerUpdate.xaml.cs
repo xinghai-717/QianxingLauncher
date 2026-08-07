@@ -201,6 +201,76 @@ public partial class PageServerUpdate
         }
     }
 
+    /// <summary>
+    /// 根据实例名称获取 McInstance 对象（不区分大小写）
+    /// </summary>
+    public async Task<McInstance> GetInstanceByName(string instanceName)
+    {
+        if (string.IsNullOrEmpty(instanceName))
+            return null;
+
+        var loader = ModInstanceList.mcInstanceListLoader;
+
+        // 如果加载器尚未启动，则启动它
+        if (loader.State == ModBase.LoadState.Waiting)
+        {
+            loader.Start();
+        }
+
+        // 等待加载完成（使用异步非阻塞等待）
+        while (loader.State == ModBase.LoadState.Loading)
+        {
+            await Task.Delay(50);
+        }
+
+        // 如果加载失败，可尝试强制刷新（可选）
+        if (loader.State == ModBase.LoadState.Failed)
+        {
+            // 可重试或提示用户
+            return null;
+        }
+
+        // 查询实例（不区分大小写）
+        var allInstances = ModInstanceList.mcInstanceList.Values.SelectMany(list => list);
+        return ModInstanceList.mcInstanceList.Values
+            .SelectMany(list => list)
+            .FirstOrDefault(inst => inst.Name.Equals(instanceName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private async Task<List<string>> GetInstalledModIdsAsync()
+    {
+        var instance = await GetInstanceByName("ThousandStars2");
+        if (instance == null)
+        {
+            HintService.Hint("未找到该实例", HintType.Error);
+            return new List<string>();
+        }
+
+        // 触发加载器运行，加载该实例的模组列表
+        var loader = ModLocalComp.compResourceListLoader;
+        var data = new ModLocalComp.CompLocalLoaderData
+        {
+            gameVersion = instance,
+            compPath = instance.PathIndie + @"mods\",
+            compType = ModComp.CompType.Mod,
+            loaders = ModLocalComp.GetCurrentVersionModLoader()
+        };
+        loader.Start(data);
+        await Task.Run(() =>
+        {
+            while (loader.State == ModBase.LoadState.Loading)
+                Thread.Sleep(100);
+        });
+
+        if (loader.State != ModBase.LoadState.Finished || loader.output == null)
+            return new List<string>();
+
+        return loader.output
+            .Where(entry => !entry.IsFolder && entry.Comp != null && !string.IsNullOrEmpty(entry.Comp.Id))
+            .Select(entry => entry.Comp.Id)
+            .Distinct()
+            .ToList();
+    }
 
     private async void BtnUpdateMod_Click(object sender, MouseButtonEventArgs e)
     {
@@ -210,10 +280,13 @@ public partial class PageServerUpdate
             return;
         }
 
-        await Task.Run(async () =>
+        var modIds = await GetInstalledModIdsAsync();
+
+        await Task.Run(async () => 
         {
             foreach (string projectId in mods)
             {
+                if (modIds.Contains(projectId)) return;
                 var ids = new List<string> { projectId };
                 bool isCurseForge = ModComp.CompRequest.IsFromCurseForge(projectId);
                 var file = ModFileHelper.GetLatestModFile(projectId, isCurseForge, "1.21.1");
@@ -221,8 +294,9 @@ public partial class PageServerUpdate
                 var project = projects.FirstOrDefault();
                 var cachedFolder = new Dictionary<ModComp.CompType, string>();
                 DownloadModResourceAuto(file, project, cachedFolder);
-            }
+            } 
         });
+
     }
 
     #region 页面切换

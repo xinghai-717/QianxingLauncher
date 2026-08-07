@@ -1437,7 +1437,7 @@ public partial class PageInstanceCompResource : IRefreshable
     private void BtnSchematicVersionSelect_Click(object sender, MouseButtonEventArgs e)
     {
         ModMain.frmMain.PageChange(FormMain.PageType.Launch);
-        ModMain.frmMain.PageChange(FormMain.PageType.InstanceSelect);
+        //ModMain.frmMain.PageChange(FormMain.PageType.InstanceSelect);
     }
 
     #endregion

@@ -12,6 +12,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 
 namespace PCL;
 
@@ -38,17 +39,32 @@ public partial class PageServerUpdate
     public async void Reload()
     {
         HintService.Hint(Lang.Text("Server.Update.WaitStatus"), log: false);
-        TxtServerInfo.Visibility = Visibility.Collapsed;
-        TxtWaitStatus.Visibility = Visibility.Visible;
+        if (ModInstanceList.McMcInstanceSelected is null)
+        {
+            BtnDownload.Visibility = Visibility.Visible;
+            BtnUpdateMod.Visibility = Visibility.Collapsed;
+        } 
+        else
+        { 
+            BtnDownload.Visibility = Visibility.Collapsed;
+            BtnUpdateMod.Visibility = Visibility.Visible;
+        }
+            
         await UpdateUIAsync();
     }
 
     private void BtnRefresh_Click(object sender, MouseButtonEventArgs e)
     {
         if (ModInstanceList.McMcInstanceSelected is null)
+        {
             BtnDownload.Visibility = Visibility.Visible;
+            BtnUpdateMod.Visibility = Visibility.Collapsed;
+        } 
         else
+        { 
+            BtnDownload.Visibility = Visibility.Collapsed;
             BtnUpdateMod.Visibility = Visibility.Visible;
+        }
         Reload();
     }
 
@@ -108,7 +124,7 @@ public partial class PageServerUpdate
 
         //string extractPath = folder+nameWithoutExt;
 
-        var loader = PageToolsTest.StartCustomDownload(url, fileName, folder, isQianxing : true);
+        var loader = PageToolsTest.StartCustomDownload(url, fileName, folder, txt : "千星整合包安装");
 
         if (loader == null) return;
 
@@ -202,101 +218,118 @@ public partial class PageServerUpdate
     }
 
     /// <summary>
-    /// 根据实例名称获取 McInstance 对象（不区分大小写）
+    /// 获取当前实例中所有已安装资源（Mod、资源包等）的非空 Comp.Id 列表（去重）。
+    /// 如果只想获取 Mod 类型的资源，可传入参数限定。
     /// </summary>
-    public async Task<McInstance> GetInstanceByName(string instanceName)
-    {
-        if (string.IsNullOrEmpty(instanceName))
-            return null;
-
-        var loader = ModInstanceList.mcInstanceListLoader;
-
-        // 如果加载器尚未启动，则启动它
-        if (loader.State == ModBase.LoadState.Waiting)
-        {
-            loader.Start();
-        }
-
-        // 等待加载完成（使用异步非阻塞等待）
-        while (loader.State == ModBase.LoadState.Loading)
-        {
-            await Task.Delay(50);
-        }
-
-        // 如果加载失败，可尝试强制刷新（可选）
-        if (loader.State == ModBase.LoadState.Failed)
-        {
-            // 可重试或提示用户
-            return null;
-        }
-
-        // 查询实例（不区分大小写）
-        var allInstances = ModInstanceList.mcInstanceList.Values.SelectMany(list => list);
-        return ModInstanceList.mcInstanceList.Values
-            .SelectMany(list => list)
-            .FirstOrDefault(inst => inst.Name.Equals(instanceName, StringComparison.OrdinalIgnoreCase));
-    }
-
+    /// <summary>
+    /// 获取当前选中实例的已安装模组 ID 列表（仅 Mod 类型，去重）
+    /// </summary>
     private async Task<List<string>> GetInstalledModIdsAsync()
     {
-        var instance = await GetInstanceByName("ThousandStars2");
-        if (instance == null)
+        try
         {
-            HintService.Hint("未找到该实例", HintType.Error);
+            var instance = ModInstanceList.McMcInstanceSelected;
+            if (instance == null)
+                return new List<string>();
+
+            // 确保实例信息已加载（填充 Info）
+            if (!instance.IsLoaded)
+                instance.Load();
+
+            // 根据实例信息构建加载器列表
+            var loaders = new List<ModComp.CompLoaderType>();
+            if (instance.Info.HasForge) loaders.Add(ModComp.CompLoaderType.Forge);
+            if (instance.Info.HasNeoForge) loaders.Add(ModComp.CompLoaderType.NeoForge);
+            if (instance.Info.HasFabric || instance.Info.HasLegacyFabric) loaders.Add(ModComp.CompLoaderType.Fabric);
+            if (instance.Info.HasQuilt) loaders.Add(ModComp.CompLoaderType.Quilt);
+            if (instance.Info.HasLiteLoader) loaders.Add(ModComp.CompLoaderType.LiteLoader);
+
+            var loader = ModLocalComp.compResourceListLoader;
+            var data = new ModLocalComp.CompLocalLoaderData
+            {
+                gameVersion = instance,
+                compPath = instance.PathIndie + @"mods\",
+                compType = ModComp.CompType.Mod,
+                loaders = loaders
+            };
+
+            ModLoader.LoaderFolderRun(loader, data.compPath, ModLoader.LoaderFolderRunType.ForceRun, loaderInput: data);
+
+            while (loader.State == ModBase.LoadState.Loading)
+                await Task.Delay(50);
+
+            if (loader.State != ModBase.LoadState.Finished || loader.output == null)
+                return new List<string>();
+
+            return loader.output
+                .Where(entry => !entry.IsFolder && entry.Comp != null && !string.IsNullOrEmpty(entry.Comp.Id))
+                .Select(entry => entry.Comp.Id)
+                .Distinct()
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, "获取已安装模组列表失败");
             return new List<string>();
         }
-
-        // 触发加载器运行，加载该实例的模组列表
-        var loader = ModLocalComp.compResourceListLoader;
-        var data = new ModLocalComp.CompLocalLoaderData
-        {
-            gameVersion = instance,
-            compPath = instance.PathIndie + @"mods\",
-            compType = ModComp.CompType.Mod,
-            loaders = ModLocalComp.GetCurrentVersionModLoader()
-        };
-        loader.Start(data);
-        await Task.Run(() =>
-        {
-            while (loader.State == ModBase.LoadState.Loading)
-                Thread.Sleep(100);
-        });
-
-        if (loader.State != ModBase.LoadState.Finished || loader.output == null)
-            return new List<string>();
-
-        return loader.output
-            .Where(entry => !entry.IsFolder && entry.Comp != null && !string.IsNullOrEmpty(entry.Comp.Id))
-            .Select(entry => entry.Comp.Id)
-            .Distinct()
-            .ToList();
     }
+
+    public static bool inUpdate = false;
 
     private async void BtnUpdateMod_Click(object sender, MouseButtonEventArgs e)
     {
+        if (inUpdate)
+        {
+            HintService.Hint("正在同步中，请勿重复点击", HintType.Warning);
+            return;
+        }
+
         if (mods == null || mods.Length == 0)
         {
             HintService.Hint("未获取到模组列表或模组列表为空!", HintType.Error);
             return;
         }
 
-        var modIds = await GetInstalledModIdsAsync();
+        inUpdate = true;
+        HintService.Hint("正在准备同步mod...", HintType.Info);
 
-        await Task.Run(async () => 
+        await Task.Run(async () =>
         {
-            foreach (string projectId in mods)
+            bool anyStarted = false;
+            try
             {
-                if (modIds.Contains(projectId)) return;
-                var ids = new List<string> { projectId };
-                bool isCurseForge = ModComp.CompRequest.IsFromCurseForge(projectId);
-                var file = ModFileHelper.GetLatestModFile(projectId, isCurseForge, "1.21.1");
-                var projects = await ModComp.CompRequest.GetCompProjectsByIdsAsync(ids);
-                var project = projects.FirstOrDefault();
-                var cachedFolder = new Dictionary<ModComp.CompType, string>();
-                DownloadModResourceAuto(file, project, cachedFolder);
-            } 
-        });
+                var modIds = await GetInstalledModIdsAsync();
 
+                for (int i = 0; i < mods.Length; i++)
+                {
+                    string projectId = mods[i];
+                    if (modIds.Contains(projectId))
+                        continue;
+
+                    anyStarted = true;
+                    var ids = new List<string> { projectId };
+                    bool isCurseForge = ModComp.CompRequest.IsFromCurseForge(projectId);
+                    var file = ModFileHelper.GetLatestModFile(projectId, isCurseForge, "1.21.1", ModComp.CompLoaderType.Fabric);
+                    var projects = await ModComp.CompRequest.GetCompProjectsByIdsAsync(ids);
+                    var project = projects.FirstOrDefault();
+                    var cachedFolder = new Dictionary<ModComp.CompType, string>();
+                    DownloadModResourceAuto(file, project, cachedFolder, i == mods.Length - 1);
+                }
+
+                // 如果没有任何任务启动，立即重置状态
+                if (!anyStarted)
+                {
+                    inUpdate = false;
+                    ModBase.RunInUi(() => HintService.Hint("所有mod同步完成", HintType.Success));
+                }
+                // 否则，由最后一个任务的 finally 重置
+            }
+            catch (Exception ex)
+            {
+                ModBase.Log(ex, "同步模组失败");
+                ModBase.RunInUi(() => HintService.Hint("同步失败，请查看日志", HintType.Error));
+            }
+        });
     }
 
     #region 页面切换
@@ -364,6 +397,42 @@ public partial class PageServerUpdate
     }
 
     // ==================== 核心安装逻辑 ====================
+    /// <summary>
+    /// 通过直链下载模组到当前或指定实例
+    /// </summary>
+    public static void DownloadModFromUrl(string url, string fileName, McInstance? targetInstance = null)
+    {
+        if (string.IsNullOrWhiteSpace(url) || string.IsNullOrWhiteSpace(fileName))
+            return;
+
+        // 自动选择实例
+        if (targetInstance == null)
+        {
+            targetInstance = ModInstanceList.McMcInstanceSelected;
+            if (targetInstance == null)
+            {
+                HintService.Hint("未选中任何实例，请先选择一个实例", HintType.Error);
+                return;
+            }
+        }
+
+        string targetFolder = Path.Combine(targetInstance.PathIndie, "mods");
+        Directory.CreateDirectory(targetFolder);
+
+        // 如果文件已存在，自动重命名（类似 DownloadModResourceAuto 的处理）
+        string targetPath = Path.Combine(targetFolder, fileName);
+        int counter = 1;
+        string baseName = Path.GetFileNameWithoutExtension(fileName);
+        string ext = Path.GetExtension(fileName);
+        while (File.Exists(targetPath))
+        {
+            targetPath = Path.Combine(targetFolder, $"{baseName} ({counter}){ext}");
+            counter++;
+        }
+
+        // 启动下载（复用 PCL 的下载功能）
+        PageToolsTest.StartCustomDownload(url, Path.GetFileName(targetPath), targetFolder);
+    }
 
     private async Task AutoInstallLatestFabricAsync()
     {
@@ -528,7 +597,7 @@ public partial class PageServerUpdate
     /// <param name="file">要下载的资源文件信息</param>
     /// <param name="project">当前项目信息（用于依赖解析）</param>
     /// <param name="cachedFolder">缓存的上次下载文件夹路径（按类型缓存，可忽略）</param>
-    public static void DownloadModResourceAuto(ModComp.CompFile file, ModComp.CompProject project, Dictionary<ModComp.CompType, string> cachedFolder)
+    public static void DownloadModResourceAuto(ModComp.CompFile file, ModComp.CompProject project, Dictionary<ModComp.CompType, string> cachedFolder, bool isLast)
     {
         ModBase.RunInNewThread(() =>
         {
@@ -757,7 +826,17 @@ public partial class PageServerUpdate
             };
 
                 var loader = new ModLoader.LoaderCombo<int>(loaderName, loaders);
-                loader.OnStateChanged = ModDownloadLib.LoaderStateChangedHintOnly;
+
+                loader.OnStateChanged = (s) =>
+                {
+                    ModDownloadLib.LoaderStateChangedHintOnly(s);
+
+                    if (isLast && (s.State == ModBase.LoadState.Finished || s.State == ModBase.LoadState.Failed || s.State == ModBase.LoadState.Aborted))
+                    {
+                        inUpdate = false;
+                        ModBase.RunInUi(() => HintService.Hint("所有mod同步完成", HintType.Success));
+                    }
+                };
                 loader.Start(1);
                 ModLoader.LoaderTaskbarAdd(loader);
 
@@ -770,6 +849,12 @@ public partial class PageServerUpdate
             }
             catch (Exception ex)
             {
+                if (isLast)
+                {
+                    inUpdate = false;
+                    ModBase.RunInUi(() => HintService.Hint("所有mod同步完成", HintType.Success));
+                }
+
                 ModBase.Log(ex, "保存资源文件失败", ModBase.LogLevel.Feedback,
                     userSummary: Lang.Text("Download.Comp.Error.OperationFailed"));
             }

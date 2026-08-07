@@ -1097,7 +1097,7 @@
     <sys:String x:Key="Instance.Resource.Mod.Disabled.SelectInstance">实例选择</sys:String>
     <sys:String x:Key="Instance.Resource.Mod.Disabled.Title">该实例不可使用模组</sys:String>
     <sys:String x:Key="Instance.Resource.Schematic.DownloadMod">下载投影模组</sys:String>
-    <sys:String x:Key="Instance.Resource.Schematic.Unavailable.Message">你可能需要先安装投影模组，如果已经安装过了投影模组请先启动一次游戏。&#xA;也可能是你选择错了实例，请点击实例选择按钮切换实例。</sys:String>
+    <sys:String x:Key="Instance.Resource.Schematic.Unavailable.Message">你需要先启动一次游戏才能使用本界面</sys:String>
     <sys:String x:Key="Instance.Resource.Schematic.Unavailable.Title">该实例不可用投影原理图</sys:String>
     <sys:String x:Key="Instance.Resource.Search.Hint">搜索资源：名称 / 描述 / 标签</sys:String>
     <sys:String x:Key="Instance.Resource.SelectAll">全选</sys:String>

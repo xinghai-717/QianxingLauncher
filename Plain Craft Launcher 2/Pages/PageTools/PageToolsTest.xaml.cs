@@ -1,14 +1,5 @@
-using System.Diagnostics;
-using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
-using System.IO;
-using System.Net;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media.Imaging;
 using PCL.Core.App;
+using PCL.Core.App.Localization;
 using PCL.Core.App.Tools;
 using PCL.Core.IO;
 using PCL.Core.IO.Net;
@@ -18,8 +9,18 @@ using PCL.Core.Utils.Secret;
 using PCL.Core.Utils.Validate;
 using PCL.Network;
 using PCL.Network.Loaders;
-using PCL.Core.App.Localization;
+using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.Globalization;
+using System.IO;
+using System.Net;
+using System.Security.AccessControl;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media.Imaging;
 
 namespace PCL;
 
@@ -115,7 +116,7 @@ public partial class PageToolsTest
         }
     }
 
-    public static ModLoader.LoaderCombo<int> StartCustomDownload(string url, string fileName, string folder = null, string userAgent = "", bool isQianxing = false)
+    public static ModLoader.LoaderCombo<int> StartCustomDownload(string url, string fileName, string folder = null, string userAgent = "", string txt = "")
 {
     try
     {
@@ -147,13 +148,61 @@ public partial class PageToolsTest
         var uuid = ModBase.GetUuid();
         ModLoader.LoaderBase loaderdownload;
         if (new HttpValidator().Validate(url).IsValid)
-            loaderdownload = new LoaderDownload(Lang.Text(isQianxing ? "Tools.Test.CustomDownload.LoaderNameQianxing" : "Tools.Test.CustomDownload.LoaderName", fileName),
+            {
+                if (txt != "")
+                {
+                    string? customName = null;
+                    if (txt == "千星整合包安装")
+                        customName = txt;
+                    else
+                        customName = txt + fileName;
+                    loaderdownload = new LoaderDownload(customName, new List<DownloadFile> { new(new[] { url }, folder + fileName, null, true, userAgent) });
+                }
+                else
+                {
+                    loaderdownload = new LoaderDownload(Lang.Text("Tools.Test.CustomDownload.LoaderName", fileName),
                 new List<DownloadFile> { new(new[] { url }, folder + fileName, null, true, userAgent) });
-        else // UNC 路径
-            loaderdownload = new LoaderDownloadUnc(Lang.Text(isQianxing ? "Tools.Test.CustomDownload.LoaderNameQianxing" : "Tools.Test.CustomDownload.LoaderName", fileName),
-                new Tuple<string, string>(url, folder + fileName));
-        var loaderCombo = new ModLoader.LoaderCombo<int>(Lang.Text(isQianxing ? "Tools.Test.CustomDownload.LoaderNameQianxing" : "Tools.Test.CustomDownload.LoaderTitle", uuid), new[] { loaderdownload })
+                }
+            }
+
+        else
+        {
+            if (txt != "")
+            {
+                string? customName = null;
+                if (txt == "千星整合包安装")
+                    customName = txt;
+                else
+                    customName = txt + fileName;
+                
+                loaderdownload = new LoaderDownloadUnc(
+                        customName,
+                        new Tuple<string, string>(url, folder + fileName)
+                    );
+                }
+            else 
+            {
+                loaderdownload = new LoaderDownloadUnc(Lang.Text("Tools.Test.CustomDownload.LoaderName", fileName),
+            new Tuple<string, string>(url, folder + fileName));
+            }
+        }
+
+        ModLoader.LoaderCombo<int>? loaderCombo = null;
+
+        if (txt != "")
+        {
+            loaderCombo = new ModLoader.LoaderCombo<int>(txt, new[] { loaderdownload })
+            {
+                OnStateChanged = a => DownloadState((ModLoader.LoaderCombo<int>)a)
+            };
+        }
+        else
+        {
+            loaderCombo = new ModLoader.LoaderCombo<int>(Lang.Text("Tools.Test.CustomDownload.LoaderTitle", uuid), new[] { loaderdownload })
             { OnStateChanged = a => DownloadState((ModLoader.LoaderCombo<int>)a) };
+        }
+    
+
         loaderCombo.Start();
         ModLoader.LoaderTaskbarAdd(loaderCombo);
         ModMain.frmMain.BtnExtraDownload.ShowRefresh();

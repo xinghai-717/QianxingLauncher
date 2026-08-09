@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
@@ -72,31 +72,31 @@ public static class ModFolder
             #region 读取自定义（Custom）文件夹，可能没有结果
 
             // 格式：TMZ 12>C://xxx/xx/|Test>D://xxx/xx/|名称>路径
-            foreach (string folder in (IEnumerable)((dynamic)States.Game.Folders).Split("|"))
-            {
-                if (string.IsNullOrEmpty(folder))
-                    continue;
-                if (!folder.Contains(">") || !folder.EndsWithF(@"\"))
-                {
-                    HintService.Hint(Lang.Text("Select.Folder.Invalid", folder), HintType.Error);
-                    continue;
-                }
+            //foreach (string folder in (IEnumerable)((dynamic)States.Game.Folders).Split("|"))
+            //{
+            //    if (string.IsNullOrEmpty(folder))
+            //        continue;
+            //    if (!folder.Contains(">") || !folder.EndsWithF(@"\"))
+            //    {
+            //        HintService.Hint(Lang.Text("Select.Folder.Invalid", folder), HintType.Error);
+            //        continue;
+            //    }
 
-                var name = folder.Split(">")[0];
-                var path = folder.Split(">")[1];
-                try
-                {
-                    ModBase.CheckPermissionWithException(path);
-                    cacheMcFolderList.Add(new McFolder { Name = name, Location = path, type = McFolder.Types.Custom });
-                }
-                catch (Exception ex)
-                {
-                    ModMain.MyMsgBox(
-                        Lang.Text("Select.Folder.Invalid.WithDetail", path, ex.ToString()),
-                        Lang.Text("Select.Folder.InvalidTitle"), isWarn: true);
-                    ModBase.Log(ex, $"无法访问 Minecraft 文件夹 {path}");
-                }
-            }
+            //    var name = folder.Split(">")[0];
+            //    var path = folder.Split(">")[1];
+            //    try
+            //    {
+            //        ModBase.CheckPermissionWithException(path);
+            //        cacheMcFolderList.Add(new McFolder { Name = name, Location = path, type = McFolder.Types.Custom });
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        ModMain.MyMsgBox(
+            //            Lang.Text("Select.Folder.Invalid.WithDetail", path, ex.ToString()),
+            //            Lang.Text("Select.Folder.InvalidTitle"), isWarn: true);
+            //        ModBase.Log(ex, $"无法访问 Minecraft 文件夹 {path}");
+            //    }
+            //}
 
             #endregion
 
@@ -125,12 +125,12 @@ public static class ModFolder
             }
 
             // 扫描官启文件夹
-            var mojangPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraft") + @"\";
-            if ((!currentMcFolderList.Any() || (mojangPath ?? "") != (currentMcFolderList[0].Location ?? "")) &&
-                Directory.Exists(Path.Combine(mojangPath, "versions"))) // 当前文件夹不是官启文件夹
-                // 具有权限且存在 versions 文件夹
-                originalMcFolderList.Add(new McFolder
-                    { Name = Lang.Text("Select.Folder.OfficialLauncherFolder"), Location = mojangPath, type = McFolder.Types.Original });
+            //var mojangPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraft") + @"\";
+            //if ((!currentMcFolderList.Any() || (mojangPath ?? "") != (currentMcFolderList[0].Location ?? "")) &&
+            //    Directory.Exists(Path.Combine(mojangPath, "versions"))) // 当前文件夹不是官启文件夹
+            //    // 具有权限且存在 versions 文件夹
+            //    originalMcFolderList.Add(new McFolder
+            //    { Name = Lang.Text("Select.Folder.OfficialLauncherFolder"), Location = mojangPath, type = McFolder.Types.Original });
 
             ModBase.Log(cacheMcFolderList.Count + " 个自定义文件夹，" + originalMcFolderList.Count + " 个原始文件夹");
 

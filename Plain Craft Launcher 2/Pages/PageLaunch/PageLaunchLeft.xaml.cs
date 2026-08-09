@@ -1,13 +1,14 @@
+using PCL.Core.App;
+using PCL.Core.App.Localization;
+using PCL.Core.UI;
+using PCL.Core.Utils;
+using PCL.Network;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
-using PCL.Core.App;
-using PCL.Core.App.Localization;
-using PCL.Core.Utils;
-using PCL.Network;
 
 namespace PCL;
 
@@ -246,10 +247,58 @@ public partial class PageLaunchLeft
         }
     }
 
-    public void RefreshButtonsUI()
+    private void EnsureGameDirectory()
+    {
+        // 如果尚未设置游戏目录，尝试自动设置或提示用户
+        if (string.IsNullOrEmpty(ModFolder.mcFolderSelected))
+        {
+            // 方案A：使用程序所在目录下的 .minecraft（如果存在）
+            string defaultPath = ModBase.exePath + ".minecraft\\";
+            if (Directory.Exists(defaultPath))
+            {
+                ModFolder.mcFolderSelected = defaultPath;
+                return;
+            }
+
+            // 方案B：使用 AppData 中的 .minecraft（常见位置）
+            string appdataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\.minecraft\\";
+            if (Directory.Exists(appdataPath))
+            {
+                ModFolder.mcFolderSelected = appdataPath;
+                return;
+            }
+
+            // 方案C：弹窗让用户选择
+            var folder = SystemDialogs.SelectFolder("请选择 .minecraft 文件夹");
+            if (!string.IsNullOrEmpty(folder))
+            {
+                ModFolder.mcFolderSelected = folder;
+            }
+            else
+            {
+                throw new Exception("未选择 .minecraft 文件夹，无法继续");
+            }
+        }
+    }
+
+    public async void RefreshButtonsUI()
     {
         if (!BtnLaunch.IsLoaded)
             return;
+
+        EnsureGameDirectory();
+
+        if (ModInstanceList.mcInstanceListLoader.State == ModBase.LoadState.Failed || ModInstanceList.mcInstanceListLoader.State == ModBase.LoadState.Waiting)
+        {
+            ModLoader.LoaderFolderRun(
+                ModInstanceList.mcInstanceListLoader,
+                ModFolder.mcFolderSelected,
+                ModLoader.LoaderFolderRunType.ForceRun,
+                1, "versions\\", true
+            );
+            while (ModInstanceList.mcInstanceListLoader.State == ModBase.LoadState.Loading)
+                await Task.Delay(50);
+        }
         // 获取当前状态
         int currentState;
         if (!isLoadFinished || ModInstanceList.mcInstanceListLoader.State == ModBase.LoadState.Loading ||
@@ -266,7 +315,24 @@ public partial class PageLaunchLeft
         }
         else
         {
-            currentState = 3;
+            if (ModInstanceList.mcInstanceListLoader.State != ModBase.LoadState.Finished)
+            {
+                currentState = 2;
+            }
+            else
+            {
+                var allInstances = ModInstanceList.mcInstanceList.Values.SelectMany(list => list).ToList();
+                var current = ModInstanceList.McMcInstanceSelected;
+
+                var target = allInstances.FirstOrDefault(i => i.Name == "ThousandStars");
+
+                if (target is null) currentState = 2;
+                else
+                {
+                    if (current != target) ModInstanceList.McMcInstanceSelected = target;
+                    currentState = 3;
+                }
+            }
         }
 
         // 更新状态。

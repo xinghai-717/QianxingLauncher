@@ -285,7 +285,8 @@ public sealed partial class ConfigService
                 ["UiLogoType"] = 2,
                 ["UiLogoText"] = "千星启动器",
                 ["LaunchArgumentInfo"] = "千星",
-                ["ToolDownloadAutoInstallDependencies"] = false
+                ["ToolDownloadAutoInstallDependencies"] = false,
+                ["ComboArgumentIndieV2"] = 4
             };
             foreach (var (key, value) in overrides)
             {

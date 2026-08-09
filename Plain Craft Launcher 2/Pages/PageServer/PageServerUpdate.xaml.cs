@@ -1,28 +1,32 @@
+using Microsoft.Extensions.Logging;
 using PCL.Core.App;
 using PCL.Core.App.Localization;
 using PCL.Core.IO.Net.Http;
 using PCL.Core.Minecraft.ResourceProject;
 using PCL.Network;
 using PCL.Network.Loaders;
+using System.Collections;
 using System.IO;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
-using System.Text.RegularExpressions;
-using Microsoft.Extensions.Logging;
 
 namespace PCL;
 
 public partial class PageServerUpdate
 {
     string[]? mods = null;
+    string[]? names = null;
+    string[]? urls = null;
+    
     public PageServerUpdate()
     {
         InitializeComponent();
-        if (ModInstanceList.McMcInstanceSelected is not null)
+        if (ModInstanceList.McMcInstanceSelected is null)
         {
             BtnDownload.Visibility = Visibility.Visible;
             BtnUpdateMod.Visibility = Visibility.Collapsed;
@@ -197,7 +201,11 @@ public partial class PageServerUpdate
             string? version = jsonNode["version"]?.GetValue<string>();
             string? fabric = jsonNode["fabric"]?.GetValue<string>();
             var modsNode = jsonNode["mods"] as JsonArray;
+            var namesNode = jsonNode["names"] as JsonArray;
+            var urlsNode = jsonNode["urls"] as JsonArray;
             mods = modsNode?.Select(x => x.GetValue<string>()).ToArray() ?? Array.Empty<string>();
+            names = namesNode?.Select(x => x.GetValue<string>()).ToArray() ?? Array.Empty<string>();
+            urls = urlsNode?.Select(x => x.GetValue<string>()).ToArray() ?? Array.Empty<string>();
 
             // 空值处理
             version = string.IsNullOrEmpty(version) ? "1.0.0" : version;
@@ -284,7 +292,7 @@ public partial class PageServerUpdate
             return;
         }
 
-        if (mods == null || mods.Length == 0)
+        if ((mods == null || mods.Length == 0)||(urls == null || urls.Length == 0)||(names == null || names.Length == 0))
         {
             HintService.Hint("未获取到模组列表或模组列表为空!", HintType.Error);
             return;
@@ -314,6 +322,14 @@ public partial class PageServerUpdate
                     var project = projects.FirstOrDefault();
                     var cachedFolder = new Dictionary<ModComp.CompType, string>();
                     DownloadModResourceAuto(file, project, cachedFolder, i == mods.Length - 1);
+                }
+
+                for (int i = 0;i < urls.Length; i++)
+                {
+                    anyStarted = true;
+                    string url = urls[i];
+                    var uri = new Uri(url);
+                    DownloadModFromUrl(url,names[i],isLast : i==urls.Length-1);
                 }
 
                 // 如果没有任何任务启动，立即重置状态
@@ -400,7 +416,7 @@ public partial class PageServerUpdate
     /// <summary>
     /// 通过直链下载模组到当前或指定实例
     /// </summary>
-    public static void DownloadModFromUrl(string url, string fileName, McInstance? targetInstance = null)
+    public static void DownloadModFromUrl(string url, string fileName, McInstance? targetInstance = null, bool isLast = false)
     {
         if (string.IsNullOrWhiteSpace(url) || string.IsNullOrWhiteSpace(fileName))
             return;
@@ -431,7 +447,24 @@ public partial class PageServerUpdate
         }
 
         // 启动下载（复用 PCL 的下载功能）
-        PageToolsTest.StartCustomDownload(url, Path.GetFileName(targetPath), targetFolder);
+        var loader = PageToolsTest.StartCustomDownload(url, Path.GetFileName(targetPath), targetFolder, txt : "模组下载");
+
+        if (loader == null) return;
+
+        // 等待完成
+        var tcs = new TaskCompletionSource<bool>();
+
+        loader.OnStateChanged = (s) =>
+        {
+            if (s.State == ModBase.LoadState.Finished || s.State == ModBase.LoadState.Failed || s.State == ModBase.LoadState.Aborted)
+            {
+                if (isLast)
+                {
+                    inUpdate = false;
+                    ModBase.RunInUi(() => HintService.Hint("所有mod同步完成", HintType.Success));
+                }
+            }
+        };
     }
 
     private async Task AutoInstallLatestFabricAsync()

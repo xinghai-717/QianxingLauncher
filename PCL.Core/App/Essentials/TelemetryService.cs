@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -189,7 +189,7 @@ public sealed partial class TelemetryService
                 _ => "Unknown"
             },
             UsedOfficialPcl =
-                bool.TryParse(Registry.GetValue(@"HKEY_CURRENT_USER\Software\PCL", "SystemEula", "false") as string,
+                bool.TryParse(Registry.GetValue(@"HKEY_CURRENT_USER\Software\ThousandStars", "SystemEula", "false") as string,
                     out var officialPcl) && officialPcl,
             UsedHmcl = Directory.Exists(Path.Combine(appDataFolder, ".hmcl")),
             UsedBakaXl = Directory.Exists(Path.Combine(appDataFolder, "BakaXL")),

@@ -1,10 +1,10 @@
 {
   "name": "千星启动器",
   "version": {
-    "base": "1.1.1",
+    "base": "1.1.2",
     "upstream": "2.15.0",
     "suffix": "",
-    "code": 3
+    "code": 4
   },
   "licenses": [
     {

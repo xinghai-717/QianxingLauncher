@@ -114,8 +114,7 @@ public partial class PageSetupUpdate
 
                 if (UpdateManager.updateLoader is not null && UpdateManager.updateLoader.State == ModBase.LoadState.Loading)
                 {
-                    BtnUpdate_Timer();
-                    BtnUpdate.IsEnabled = false;
+                    await BtnUpdate_TimerAsync();
                 }
                 else if (UpdateManager.isUpdateWaitingRestart)
                 {
@@ -151,12 +150,33 @@ public partial class PageSetupUpdate
         }
     }
 
-    public void BtnUpdate_Timer()
+    private async Task BtnUpdate_TimerAsync()
     {
-        while (UpdateManager.updateLoader is not null && UpdateManager.updateLoader.State == ModBase.LoadState.Loading)
+        try
         {
-            ModBase.RunInUi(() => BtnUpdate.Text = Lang.Number(UpdateManager.updateLoader.Progress, "P2"));
-            Thread.Sleep(200);
+            while (UpdateManager.updateLoader is not null &&
+                    UpdateManager.updateLoader.State == ModBase.LoadState.Loading)
+            {
+                // 更新 UI 进度（在 UI 线程执行）
+                ModBase.RunInUi(() =>
+                {
+                    BtnUpdate.Text = Lang.Number(UpdateManager.updateLoader.Progress, "P2");
+                });
+                // 非阻塞等待 200ms
+                await Task.Delay(200);
+            }
+        }
+        finally
+        {
+            // 加载完成后（无论成功/失败/取消），恢复按钮状态
+            ModBase.RunInUi(() =>
+            {
+                if (UpdateManager.isUpdateWaitingRestart)
+                    BtnUpdate.Text = Lang.Text("Setup.Update.RestartInstall");
+                else
+                    BtnUpdate.Text = Lang.Text("Setup.Update.Install");
+                BtnUpdate.IsEnabled = true;
+            });
         }
     }
 

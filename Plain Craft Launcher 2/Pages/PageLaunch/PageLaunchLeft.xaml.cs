@@ -259,25 +259,6 @@ public partial class PageLaunchLeft
                 ModFolder.mcFolderSelected = defaultPath;
                 return;
             }
-
-            // 方案B：使用 AppData 中的 .minecraft（常见位置）
-            string appdataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\.minecraft\\";
-            if (Directory.Exists(appdataPath))
-            {
-                ModFolder.mcFolderSelected = appdataPath;
-                return;
-            }
-
-            // 方案C：弹窗让用户选择
-            var folder = SystemDialogs.SelectFolder("请选择 .minecraft 文件夹");
-            if (!string.IsNullOrEmpty(folder))
-            {
-                ModFolder.mcFolderSelected = folder;
-            }
-            else
-            {
-                throw new Exception("未选择 .minecraft 文件夹，无法继续");
-            }
         }
     }
 

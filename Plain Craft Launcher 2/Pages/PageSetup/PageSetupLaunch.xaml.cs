@@ -18,6 +18,8 @@ public partial class PageSetupLaunch
     {
         Loaded += PageSetupLaunch_Loaded;
         InitializeComponent();
+
+        ComboArgumentIndieV2.IsEnabled = false;
     }
 
     private void PageSetupLaunch_Loaded(object sender, RoutedEventArgs e)

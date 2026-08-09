@@ -1899,7 +1899,7 @@
     <sys:String x:Key="Main.Title.ResourceDownload">资源下载 - {0}</sys:String>
     <sys:String x:Key="Main.Title.SaveManagement">存档管理 - {0}</sys:String>
     <sys:String x:Key="Main.Title.TaskManager">任务管理</sys:String>
-    <sys:String x:Key="Main.UpdateLog.Empty">欢迎使用呀~</sys:String>
+    <sys:String x:Key="Main.UpdateLog.Empty">欢迎使用,千星启动器</sys:String>
     <sys:String x:Key="Main.UpdateLog.FullChangelog">完整更新日志</sys:String>
     <sys:String x:Key="Main.UpdateLog.Title">千星启动器 已更新至 {0} {1}</sys:String>
     <sys:String x:Key="Main.HomepageReset.Title">主页预设已重置</sys:String>

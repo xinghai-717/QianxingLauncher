@@ -313,8 +313,15 @@ public partial class PageLaunchLeft
                 if (target is null) currentState = 2;
                 else
                 {
-                    if (current != target) ModInstanceList.McMcInstanceSelected = target;
-                    currentState = 3;
+                    if (current is null)
+                    {
+                        currentState = 2;
+                    }
+                    else
+                    {
+                        if (current != target) ModInstanceList.McMcInstanceSelected = target;
+                        currentState = 3;
+                    }
                 }
             }
         }

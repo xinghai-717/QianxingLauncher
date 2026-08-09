@@ -1,4 +1,7 @@
+using Microsoft.VisualBasic.FileIO;
 using PCL.Core.App;
+using PCL.Core.App.Configuration;
+using PCL.Core.App.Configuration.Storage;
 using PCL.Core.App.Localization;
 using PCL.Core.UI;
 using PCL.Core.Utils;
@@ -337,6 +340,7 @@ public partial class PageLaunchLeft
                 ModMain.frmLaunchLeft.LabVersion.Text = Lang.Text("Launch.Home.Instance.Loading");
                 ModMain.frmLaunchLeft.BtnInstance.IsEnabled = false;
                 ModMain.frmLaunchLeft.BtnMore.Visibility = Visibility.Collapsed;
+                BtnDeleteAndInstall.Visibility = Visibility.Collapsed;
                 break;
             }
             case 1:
@@ -348,6 +352,7 @@ public partial class PageLaunchLeft
                 ModMain.frmLaunchLeft.LabVersion.Text = Lang.Text("Launch.Home.Instance.NotFound");
                 ModMain.frmLaunchLeft.BtnInstance.IsEnabled = true;
                 ModMain.frmLaunchLeft.BtnMore.Visibility = Visibility.Collapsed;
+                BtnDeleteAndInstall.Visibility = Visibility.Collapsed;
                 break;
             }
             case 2:
@@ -359,6 +364,7 @@ public partial class PageLaunchLeft
                 ModMain.frmLaunchLeft.LabVersion.Text = Lang.Text("Launch.Home.Instance.NotFound");
                 ModMain.frmLaunchLeft.BtnInstance.IsEnabled = true;
                 ModMain.frmLaunchLeft.BtnMore.Visibility = Visibility.Collapsed;
+                BtnDeleteAndInstall.Visibility = Visibility.Collapsed;
                 break;
             }
             case 3:
@@ -372,6 +378,7 @@ public partial class PageLaunchLeft
                 else
                     BtnLaunch.IsEnabled = false;
                 ModMain.frmLaunchLeft.LabVersion.Text = ModInstanceList.McMcInstanceSelected.Name;
+                BtnDeleteAndInstall.Visibility = Visibility.Visible;
                 break;
             }
             // FrmLaunchLeft.BtnMore.Visibility = Visibility.Visible '由功能隐藏设置修改
@@ -601,6 +608,55 @@ public partial class PageLaunchLeft
     private void BtnLaunch_Click(object sender, MouseButtonEventArgs e)
     {
         LaunchButtonClick();
+    }
+
+    private void BtnDeleteAndInstall_Click(object sender, MouseButtonEventArgs e)
+    {
+        var isShiftPressed = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
+
+        var confirmResult = ModMain.MyMsgBox(
+            "此操作会删除所有文件包括你自己的Mod,\r\n并且重新安装千星整合包,\r\n在点击此选项前请提前备份!",
+            "你确定要删除实例并重新安装吗?",
+            button2: Lang.Text("Common.Action.Cancel"),
+            isWarn: true
+        );
+
+        switch (confirmResult)
+        {
+            case 1:
+            {
+                var instance = ModInstanceList.McMcInstanceSelected;
+
+                var instancePath = instance.PathInstance;
+                var instanceName = instance.Name;
+
+                ModBase.IniClearCache(Path.Combine(instance.PathIndie, "options.txt"));
+                ((DynamicCacheConfigStorage)ConfigService.GetProvider(ConfigSource.GameInstance)).InvalidateCache(
+                    instancePath);
+                if (isShiftPressed)
+                {
+                    ModBase.DeleteDirectory(instancePath);
+                    HintService.Hint(Lang.Text("Instance.Overall.Delete.PermanentSuccess", instanceName),
+                        HintType.Success);
+                }
+                else
+                {
+                    FileSystem.DeleteDirectory(instancePath, UIOption.OnlyErrorDialogs,
+                        RecycleOption.SendToRecycleBin);
+                    HintService.Hint(Lang.Text("Instance.Overall.Delete.RecycleBinSuccess", instanceName),
+                        HintType.Success);
+                }
+                break;
+            }
+            case 2:
+            {
+                return;
+            }
+        }
+        ModLoader.LoaderFolderRun(ModInstanceList.mcInstanceListLoader, ModFolder.mcFolderSelected,
+            ModLoader.LoaderFolderRunType.ForceRun, 1, @"versions\");
+
+        ModMain.frmMain.PageChange(FormMain.PageType.Server, FormMain.PageSubType.ServerUpdate);
     }
 
     #region 切换大页面

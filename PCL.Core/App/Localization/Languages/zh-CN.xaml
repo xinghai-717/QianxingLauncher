@@ -1636,6 +1636,7 @@
     <sys:String x:Key="Launch.Home.Button.Download">下载游戏</sys:String>
     <sys:String x:Key="Launch.Home.Button.ServerDownload">同步服务器配置</sys:String>
     <sys:String x:Key="Launch.Home.Button.Launch">启动游戏</sys:String>
+    <sys:String x:Key="Launch.Home.Button.DeleteAndInstall">删除实例并重新安装</sys:String>
     <sys:String x:Key="Launch.Home.Button.Loading">正在加载</sys:String>
     <sys:String x:Key="Launch.Home.Instance.InstallingCannotLaunch">当前实例正在安装，无法启动！</sys:String>
     <sys:String x:Key="Launch.Home.Instance.InstallingCannotSetup">当前实例正在安装，暂无法进行实例设置！</sys:String>

@@ -31,21 +31,35 @@
                         Margin="0,10,10,0" TextPadding="36" Text="{DynamicResource Launch.Home.InstanceSettings}" />
         <Grid Grid.ColumnSpan="5" Grid.Row="1" Margin="20,0" VerticalAlignment="Center" x:Name="PanLogin" />
         <Grid Grid.ColumnSpan="5" Grid.Row="2" RenderTransformOrigin="0.5,0.5">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
+            </Grid.RowDefinitions>
             <Grid.RenderTransform>
                 <TransformGroup>
                     <ScaleTransform x:Name="AprilScaleTrans" />
                     <TranslateTransform x:Name="AprilPosTrans" />
                 </TransformGroup>
             </Grid.RenderTransform>
-            <local:MyButton x:Name="BtnLaunch" Height="54" Margin="20,0" Text="{DynamicResource Launch.Home.Button.Loading}" ColorType="Highlight"
+            <local:MyButton Grid.Row="0" Visibility="Collapsed" x:Name="BtnDeleteAndInstall" Height="27" Margin="20,0,20,10" Text="{DynamicResource Launch.Home.Button.DeleteAndInstall}" ColorType="Red"
+                            Click="BtnDeleteAndInstall_Click"
+                            Padding="30,0"/>
+            <local:MyButton Grid.Row="1" x:Name="BtnLaunch" Height="54" Margin="20,0" Text="{DynamicResource Launch.Home.Button.Loading}" ColorType="Highlight"
                             Click="BtnLaunch_Click"
                             Padding="30,0,30,15" IsEnabled="False" />
-            <TextBlock x:Name="LabVersion" Text="{DynamicResource Launch.Home.VersionList.Loading}" Margin="35,0,35,10" IsHitTestVisible="False"
-                       VerticalAlignment="Bottom" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"
-                       FontSize="11" Foreground="{DynamicResource ColorBrushGray3}" RenderTransformOrigin="0.5,-0.2">
+            <TextBlock Grid.Row="1" x:Name="LabVersion" 
+               Text="{DynamicResource Launch.Home.VersionList.Loading}" 
+               Margin="35,0,35,10" 
+               IsHitTestVisible="False"
+               VerticalAlignment="Bottom" 
+               HorizontalAlignment="Center" 
+               TextTrimming="CharacterEllipsis"
+               FontSize="11" 
+               Foreground="{DynamicResource ColorBrushGray3}" 
+               RenderTransformOrigin="0.5,-0.2">
                 <TextBlock.RenderTransform>
                     <ScaleTransform ScaleX="{Binding RealRenderTransform.ScaleX, ElementName=BtnLaunch, Mode=OneWay}"
-                                    ScaleY="{Binding RealRenderTransform.ScaleY, ElementName=BtnLaunch, Mode=OneWay}" />
+                        ScaleY="{Binding RealRenderTransform.ScaleY, ElementName=BtnLaunch, Mode=OneWay}" />
                 </TextBlock.RenderTransform>
             </TextBlock>
         </Grid>

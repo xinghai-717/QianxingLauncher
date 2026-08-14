@@ -35,22 +35,21 @@
                         Grid.Column="1"
                         Margin="-5,0,15,0"
                         Info="{DynamicResource Setup.About.OriginalAuthor.Info}"
-                        IsHitTestVisible="False"
                         Title="{DynamicResource Setup.About.OriginalAuthor.Name}" />
                     <local:MyListItem
                         Grid.Row="1"
                         Grid.Column="1"
                         Margin="-5,0,15,0"
                         Info="{DynamicResource Setup.About.Developer.Info}"
-                        IsHitTestVisible="False"
-                        Title="{DynamicResource Setup.About.Developer.Name}" />
+                        Title="{DynamicResource Setup.About.Developer.Name}"
+                        TitleClick="XinghaiTxt_Click"
+                        />
                     <local:MyListItem
                         x:Name="ItemAboutPcl"
                         Grid.Row="2"
                         Grid.Column="1"
                         Margin="-5,0,15,0"
                         Info="{DynamicResource Setup.About.Version.Info}"
-                        IsHitTestVisible="False"
                         Title="{Binding Name}" />
                     <Image
                         x:Name="ImgPCLLogo"

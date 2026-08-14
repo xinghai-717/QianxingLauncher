@@ -380,10 +380,11 @@ public partial class PageLaunchLeft
                 ModBase.Log("[Minecraft] 启动按钮：Minecraft 实例：" + ModInstanceList.McMcInstanceSelected.PathInstance);
                 ModMain.frmLaunchLeft.BtnLaunch.Text = Lang.Text("Launch.Home.Button.Launch");
                 ModMain.frmLaunchLeft.BtnInstance.IsEnabled = true;
-                if (ModProfile.selectedProfile is not null)
-                    BtnLaunch.IsEnabled = true;
-                else
-                    BtnLaunch.IsEnabled = false;
+                BtnLaunch.IsEnabled = true;
+                //if (ModProfile.selectedProfile is not null)
+                //    BtnLaunch.IsEnabled = true;
+                //else
+                //    BtnLaunch.IsEnabled = false;
                 ModMain.frmLaunchLeft.LabVersion.Text = ModInstanceList.McMcInstanceSelected.Name;
                 BtnDeleteAndInstall.Visibility = Visibility.Visible;
                 break;
@@ -614,6 +615,14 @@ public partial class PageLaunchLeft
     // 启动游戏按钮
     private void BtnLaunch_Click(object sender, MouseButtonEventArgs e)
     {
+        if (ModProfile.selectedProfile is null)
+        {
+            if (ModMain.frmLoginProfile is null)
+                ModMain.frmLoginProfile = new PageLoginProfile();
+
+            ModMain.frmLoginProfile.openProfile();
+            return;
+        }
         LaunchButtonClick();
     }
 
@@ -914,16 +923,17 @@ public partial class PageLaunchLeft
             if (targetLoginType == ModLaunch.McLoginType.Legacy)
                 type = PageType.Offline;
         }
-        else if (ModProfile.selectedProfile is not null)
-        {
-            type = PageType.ProfileSkin;
-            BtnLaunch.IsEnabled = true;
-        }
+        //else if (ModProfile.selectedProfile is not null)
+        //{
+        //    type = PageType.ProfileSkin;
+        //    BtnLaunch.IsEnabled = true;
+        //}
         else
         {
             type = PageType.Profile;
-            if (_launchButtonAction != LaunchButtonAction.Download)
-                BtnLaunch.IsEnabled = false;
+            BtnLaunch.IsEnabled = true;
+            //if (_launchButtonAction != LaunchButtonAction.Download)
+            //    BtnLaunch.IsEnabled = false;
         }
 
         // 刷新页面

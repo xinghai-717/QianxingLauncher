@@ -29,6 +29,14 @@ public partial class MyListItem : IMyRadio
     public event ClickEventHandler? Click;
     public event LogoClickEventHandler? LogoClick;
 
+    public event ClickEventHandler? TitleClick;
+
+    private void LabTitle_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        TitleClick?.Invoke(this, e);
+        isMouseDown = true;
+    }
+
     public void RefreshColor(object sender, EventArgs e)
     {
         // 菜单虚拟化检测

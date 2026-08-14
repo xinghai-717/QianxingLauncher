@@ -24,7 +24,7 @@
                                         ToolTipService.InitialShowDelay="200"
                                         ToolTipService.VerticalOffset="-1"
                                         LogoScale="0.85"
-                                        Click="StatusRefresh"
+                                        Click="BtnRefresh_Click"
                                         SvgIcon="lucide/refresh-cw" />
                 </x:Array>
             </local:MyListItem.Buttons>
@@ -41,13 +41,13 @@
                           SvgIcon="lucide/database-check">
             <local:MyListItem.Buttons>
                 <x:Array Type="{x:Type local:MyIconButton}">
-                    <local:MyIconButton Tag="0"
+                    <local:MyIconButton Tag="1"
                                         ToolTip="{DynamicResource Common.Action.Refresh}"
                                         ToolTipService.Placement="Right"
                                         ToolTipService.InitialShowDelay="200"
                                         ToolTipService.VerticalOffset="-1"
                                         LogoScale="0.85"
-                                        Click="UpdateRefresh"
+                                        Click="BtnRefresh_Click"
                                         SvgIcon="lucide/refresh-cw" />
                 </x:Array>
             </local:MyListItem.Buttons>

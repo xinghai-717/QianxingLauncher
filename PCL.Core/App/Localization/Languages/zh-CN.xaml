@@ -276,6 +276,7 @@
     <sys:String x:Key="Server.Status.WaitStatus">正在查询服务器状态...</sys:String>
     <sys:String x:Key="Server.Status.GetStatusSuccess">获取服务器状态成功</sys:String>
     <sys:String x:Key="Server.Status.OnlinePlayers">在线人数:</sys:String>
+    <sys:String x:Key="Server.Status.PlayersName">玩家列表:</sys:String>
     <sys:String x:Key="Server.Status.Description">简介:</sys:String>
     <sys:String x:Key="Server.Status.Version">服务器版本:</sys:String>
     <sys:String x:Key="Server.Status.Refresh">刷新</sys:String>

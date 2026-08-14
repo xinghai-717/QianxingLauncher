@@ -13,12 +13,12 @@ public partial class PageSetupFeedback
     {
         Processing = 6820804544L,
         WaitingProcess = 6820804546L,
-        Completed = 6820804547L,
+        Completed = 11831489748L,
         Decline = 6820804539L,
-        Ignored = 8064650117L,
+        Ignored = 11831502180L,
         Duplicate = 6820804541L,
         Wait = 8743070786L,
-        Pause = 8558220235L,
+        Pause = 11831471073L,
         Upnext = 8550609020L
     }
 
@@ -60,7 +60,7 @@ public partial class PageSetupFeedback
     public void FeedbackListGet(ModLoader.LoaderTask<bool, List<Feedback>> task)
     {
         var list = Requester.FetchJson(
-            "https://api.github.com/repos/PCL-Community/PCL2-CE/issues?state=all&sort=created&per_page=200",
+            "https://api.github.com/repos/xinghai-717/QianxingLauncher/issues?state=all&sort=created&per_page=200",
             new RequestParam
             {
                 Retries = 3,

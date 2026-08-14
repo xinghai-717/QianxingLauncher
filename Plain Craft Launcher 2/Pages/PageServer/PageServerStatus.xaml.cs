@@ -23,6 +23,11 @@ public partial class PageServerStatus
 
     public async void Reload()
     {
+        WaitPanel.Visibility = Visibility.Visible;
+        DataPanel.Visibility = Visibility.Collapsed;
+        ServerImage.Visibility = Visibility.Collapsed;
+        PlayerName.Visibility = Visibility.Collapsed;
+        DescriptionContainer.Visibility = Visibility.Collapsed;
         await GetServerInfo();
     }
 
@@ -40,7 +45,6 @@ public partial class PageServerStatus
 
     private void BtnRefresh_Click(object sender, MouseButtonEventArgs e)
     {
-        HintService.Hint(Lang.Text("Server.Status.WaitStatus"), log:false);
         Reload();
     }
 
@@ -71,6 +75,7 @@ public partial class PageServerStatus
                         bitmap.EndInit();
                         ServerImage.Source = bitmap;
                     }
+                    ServerImage.Visibility = Visibility.Visible;
                 }
 
                 // 2. MOTD（彩色）
@@ -83,10 +88,26 @@ public partial class PageServerStatus
                         var motdBlock = WpfMotdRenderer.Parse(coloredText);
                         DescriptionContainer.Content = motdBlock;
                     }
+                    DescriptionContainer.Visibility = Visibility.Visible;
                 }
 
                 // 3. 在线人数 & 版本
-                TxtOnlineCount.Text = ret.Players is not null ? $"{ret.Players.Online}/{ret.Players.Max}" : "N/A";
+                List<string> playerNames = new List<string>();
+                if (ret.Players?.Samples != null)
+                {
+                    foreach (var player in ret.Players.Samples)
+                    {
+                        if (player.Id== "00000000-0000-0000-0000-000000000000") continue;
+                        playerNames.Add(player.Name);
+                    }
+
+                    if (playerNames.Count!=0)
+                    {
+                        PlayerName.Visibility = Visibility.Visible;
+                        TxtPlayersName.Text = string.Join(",", playerNames);
+                    }
+                }
+                TxtOnlineCount.Text = ret.Players != null ? $"{playerNames.Count}/{ret.Players.Max}" : "N/A";
                 TxtVersion.Text = ret.Version is not null ? ret.Version.Name : "未知";
 
                 // 4. 切换显示状态
@@ -108,6 +129,11 @@ public partial class PageServerStatus
                 TxtOnlineCount.Text = "0";
                 TxtVersion.Text = "服务器已关闭";
             });
+        }
+        finally
+        {
+            WaitPanel.Visibility = Visibility.Collapsed;
+            DataPanel.Visibility = Visibility.Visible;
         }
     }
 

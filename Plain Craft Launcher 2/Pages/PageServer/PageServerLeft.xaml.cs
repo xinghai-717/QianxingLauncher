@@ -36,7 +36,7 @@ public partial class PageServerLeft
         isPageSwitched = false;
     }
 
-    public void StatusRefresh(object sender, EventArgs e)
+    public void BtnRefresh_Click(object sender, EventArgs e)
     {
         var button = (MyIconButton)sender;
         if (button.Tag is null)
@@ -45,19 +45,22 @@ public partial class PageServerLeft
         switch (id)
         {
             case (double)FormMain.PageSubType.ServerStatus:
-            {
-                if (ModMain.frmServerStatus is null)
-                    ModMain.frmServerStatus = new PageServerStatus();
-                ModMain.frmServerStatus.Reload();
-                ItemServerStatus.Checked = true;
-                break;
-            }
+                {
+                    if (ModMain.frmServerStatus is null)
+                        ModMain.frmServerStatus = new PageServerStatus();
+                    ModMain.frmServerStatus.Reload();
+                    ItemServerStatus.Checked = true;
+                    break;
+                }
+            case (double)FormMain.PageSubType.ServerUpdate:
+                {
+                    if (ModMain.frmServerUpdate is null)
+                        ModMain.frmServerUpdate = new PageServerUpdate();
+                    ModMain.frmServerUpdate.Reload();
+                    ItemServerUpdate.Checked = true;
+                    break;
+                }
         }
-    }
-
-    public void UpdateRefresh(object sender, EventArgs e)
-    {
-
     }
 
     #region 页面切换

@@ -157,7 +157,7 @@ public partial class PageLoginProfile
     public static bool profileOpen = false;
 
     // 创建档案
-    private void openProfile()
+    public void openProfile()
     {
         if (!profileOpen) profileOpen = true;
         else return;
